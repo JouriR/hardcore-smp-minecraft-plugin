@@ -1,0 +1,8 @@
+name: HardcoreSMPPlugin
+version: '1.0-SNAPSHOT'
+main: com.jouriroosjen.hardcoreSMPPlugin.HardcoreSMPPlugin
+api-version: '1.21'
+load: STARTUP
+authors: [ JouriR ]
+description: The custom plugin for our hardcore SMP with a grace period and buy backs.
+website: jouriroosjen.com
