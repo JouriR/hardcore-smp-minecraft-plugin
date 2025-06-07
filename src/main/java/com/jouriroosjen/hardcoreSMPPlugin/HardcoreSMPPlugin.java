@@ -7,6 +7,10 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        // Load config
+        saveDefaultConfig();
+
+        // Register event listeners
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(this), this);
     }
 

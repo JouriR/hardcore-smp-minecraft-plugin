@@ -14,6 +14,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Listener class for handling player death events in the server.
@@ -99,15 +100,17 @@ public class PlayerDeathListener implements Listener {
         player.playSound(player, Sound.AMBIENT_CAVE, 1, 1);
 
         // Broadcast custom death message to the server
-        final TextComponent message = Component.text()
+        String deathMessage = plugin.getConfig().getString("general.death-message");
+        TextComponent messageComponent = Component.text()
                 .content("[SERVER] ")
                 .color(NamedTextColor.RED)
                 .decorate(TextDecoration.BOLD)
-                .append(Component.text(player.getName(), NamedTextColor.WHITE, TextDecoration.BOLD))
-                .append(Component.text(" moet dokken!", NamedTextColor.RED))
+                .append(Component.text(player.getName(), NamedTextColor.WHITE))
+                .append(Component.text(" "))
+                .append(Component.text(Objects.requireNonNull(deathMessage), NamedTextColor.RED))
                 .build();
 
-        plugin.getServer().broadcast(message);
+        plugin.getServer().broadcast(messageComponent);
     }
 
     /**
