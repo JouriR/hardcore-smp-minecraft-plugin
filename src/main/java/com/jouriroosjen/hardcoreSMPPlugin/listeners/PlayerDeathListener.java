@@ -25,7 +25,7 @@ public class PlayerDeathListener implements Listener {
     private final JavaPlugin plugin;
 
     /**
-     * Constructs a new {@code PlayerDeathListener}.
+     * Constructs a new {@code PlayerDeathListener} instance.
      *
      * @param plugin The main plugin instance
      */
@@ -117,7 +117,7 @@ public class PlayerDeathListener implements Listener {
      * Vanilla drops between 0 and 7 * level, capped at 100xp.
      *
      * @param player The player that died
-     * @return int
+     * @return The amount of experience points to drop
      */
     private int getDeathXp(Player player) {
         int level = player.getLevel();

@@ -1,6 +1,7 @@
 package com.jouriroosjen.hardcoreSMPPlugin;
 
 import com.jouriroosjen.hardcoreSMPPlugin.database.DatabaseManager;
+import com.jouriroosjen.hardcoreSMPPlugin.database.MigrationsManager;
 import com.jouriroosjen.hardcoreSMPPlugin.listeners.PlayerDeathListener;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -18,7 +19,17 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         try {
             databaseManager = new DatabaseManager(this);
         } catch (SQLException e) {
-            getLogger().severe("Failed to connect to database!");
+            getLogger().severe("[DATABASE] Failed to connect to database!");
+            e.printStackTrace();
+            getServer().getPluginManager().disablePlugin(this);
+        }
+
+        // Run database migration
+        MigrationsManager migrationsManager = new MigrationsManager(this, databaseManager.connection);
+        try {
+            migrationsManager.migrate();
+        } catch (SQLException e) {
+            getLogger().severe("[DATABASE] Failed to migrate database!");
             e.printStackTrace();
             getServer().getPluginManager().disablePlugin(this);
         }
