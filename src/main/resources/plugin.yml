@@ -4,5 +4,9 @@ main: com.jouriroosjen.hardcoreSMPPlugin.HardcoreSMPPlugin
 api-version: '1.21'
 load: STARTUP
 authors: [ JouriR ]
-description: The custom plugin for our hardcore SMP with a grace period and buy backs.
+description: The custom plugin for our hardcore SMP with buy backs.
 website: jouriroosjen.com
+commands:
+  buyback:
+    description: "Buy yourself or another player back!"
+    usage: "/buyback [user] [percentage]"

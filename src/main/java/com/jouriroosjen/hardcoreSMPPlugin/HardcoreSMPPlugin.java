@@ -1,5 +1,6 @@
 package com.jouriroosjen.hardcoreSMPPlugin;
 
+import com.jouriroosjen.hardcoreSMPPlugin.commands.BuyBackCommand;
 import com.jouriroosjen.hardcoreSMPPlugin.database.DatabaseManager;
 import com.jouriroosjen.hardcoreSMPPlugin.database.MigrationsManager;
 import com.jouriroosjen.hardcoreSMPPlugin.listeners.PlayerDeathListener;
@@ -36,6 +37,9 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
 
         // Register event listeners
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(this, databaseManager.connection), this);
+
+        // Register commands
+        getCommand("buyback").setExecutor(new BuyBackCommand());
     }
 
     @Override
