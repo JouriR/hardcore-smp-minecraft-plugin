@@ -12,8 +12,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Listener class for handling player death events in the server.
@@ -23,14 +28,17 @@ import java.util.Objects;
  */
 public class PlayerDeathListener implements Listener {
     private final JavaPlugin plugin;
+    private final Connection connection;
 
     /**
      * Constructs a new {@code PlayerDeathListener} instance.
      *
      * @param plugin The main plugin instance
+     * @param connection The active database connection
      */
-    public PlayerDeathListener(JavaPlugin plugin) {
+    public PlayerDeathListener(JavaPlugin plugin,  Connection connection) {
         this.plugin = plugin;
+        this.connection = connection;
     }
 
     /**
@@ -43,6 +51,7 @@ public class PlayerDeathListener implements Listener {
      *     <li>Drops an XP orb</li>
      *     <li>Switches the player to spectator mode</li>
      *     <li>Broadcasts a death message to all players</li>
+     *     <li>Saves death in database {@code deaths} table</li>
      * </ul>
      *
      * @param event The player death event
@@ -110,6 +119,14 @@ public class PlayerDeathListener implements Listener {
                 .build();
 
         plugin.getServer().broadcast(messageComponent);
+
+        // Save death to database
+        try {
+            saveDeathToDatabase(player.getUniqueId());
+        } catch (SQLException e) {
+            plugin.getLogger().severe("[DATABASE] Failed to save death of player " + player.getName() + " - " + player.getUniqueId());
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -122,5 +139,18 @@ public class PlayerDeathListener implements Listener {
     private int getDeathXp(Player player) {
         int level = player.getLevel();
         return (int) Math.min(player.getLevel() * 7, 100);
+    }
+
+    /**
+     * Inserts a player's death into the {@code deaths} table.
+     *
+     * @param playerUuid The UUID of the player who died
+     * @throws SQLException If a database error occurs while inserting
+     */
+    private void saveDeathToDatabase(UUID playerUuid) throws SQLException {
+        try (PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO deaths (uuid) VALUES (?)")) {
+            preparedStatement.setString(1, String.valueOf(playerUuid));
+            preparedStatement.execute();
+        }
     }
 }

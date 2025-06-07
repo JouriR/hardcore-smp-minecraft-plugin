@@ -35,7 +35,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         }
 
         // Register event listeners
-        getServer().getPluginManager().registerEvents(new PlayerDeathListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerDeathListener(this, databaseManager.connection), this);
     }
 
     @Override
