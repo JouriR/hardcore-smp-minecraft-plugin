@@ -23,7 +23,7 @@ import java.util.UUID;
  * Listener class for handling player death events in the server.
  *
  * @author Jouri Roosjen
- * @version 0.1.0
+ * @version 0.1.1
  */
 public class PlayerDeathListener implements Listener {
     private final JavaPlugin plugin;
@@ -123,7 +123,15 @@ public class PlayerDeathListener implements Listener {
         try {
             saveDeathToDatabase(player.getUniqueId());
         } catch (SQLException e) {
-            plugin.getLogger().severe("[DATABASE] Failed to save death of player " + player.getName() + " - " + player.getUniqueId());
+            plugin.getLogger().severe("[DATABASE] Failed to save death of player " + player.getName());
+            e.printStackTrace();
+        }
+
+        // Update player alive status
+        try {
+            updatePlayerAliveStatus(player.getUniqueId());
+        } catch (SQLException e) {
+            plugin.getLogger().severe("[DATABASE] Failed to update alive status of player " + player.getName());
             e.printStackTrace();
         }
     }
@@ -147,7 +155,25 @@ public class PlayerDeathListener implements Listener {
      * @throws SQLException If a database error occurs while inserting
      */
     private void saveDeathToDatabase(UUID playerUuid) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement("INSERT INTO deaths (uuid) VALUES (?)")) {
+        try (PreparedStatement statement = connection.prepareStatement("INSERT INTO deaths (player_uuid) VALUES (?)")) {
+            statement.setString(1, playerUuid.toString());
+            statement.execute();
+        }
+    }
+
+    /**
+     * Updates the player's alive status in the database to indicate they are no longer alive.
+     *
+     * @param playerUuid The UUID of the player to update
+     * @throws SQLException If a database access error occurs
+     */
+    private void updatePlayerAliveStatus(UUID playerUuid) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                   UPDATE players SET
+                       is_alive = 0,
+                       updated_at = datetime('now')
+                   WHERE uuid = ?
+                """)) {
             statement.setString(1, playerUuid.toString());
             statement.execute();
         }
