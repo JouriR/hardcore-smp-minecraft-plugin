@@ -39,7 +39,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         }
 
         // Setup managers
-        BuybackManager buybackManager = new BuybackManager();
+        BuybackManager buybackManager = new BuybackManager(this);
 
         // Register event listeners
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(this, databaseManager.connection), this);

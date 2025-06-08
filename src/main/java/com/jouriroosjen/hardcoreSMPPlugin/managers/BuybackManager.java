@@ -1,5 +1,12 @@
 package com.jouriroosjen.hardcoreSMPPlugin.managers;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.OptionalInt;
@@ -9,10 +16,16 @@ import java.util.UUID;
  * Manages buyback confirmations initiated by players.
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.1.0
  */
 public class BuybackManager {
+    private final JavaPlugin plugin;
+
     private final Map<UUID, PendingBuyback> pendingConformations = new HashMap<>();
+
+    public BuybackManager(JavaPlugin plugin) {
+        this.plugin = plugin;
+    }
 
     /**
      * Represents a pending buyback.
@@ -31,7 +44,24 @@ public class BuybackManager {
      * @param percentage An optional percentage value in case of an assist
      */
     public void addPending(UUID sender, UUID target, OptionalInt percentage) {
-        pendingConformations.put(sender, new PendingBuyback(target, percentage));
+        PendingBuyback buyback = new PendingBuyback(target, percentage);
+        pendingConformations.put(sender, buyback);
+
+        // Schedule auto remove after 60 seconds
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                PendingBuyback existing = pendingConformations.get(sender);
+                if (existing != null && existing.equals(buyback)) {
+                    pendingConformations.remove(sender);
+                    Player player = Bukkit.getPlayer(sender);
+
+                    if (player != null) {
+                        player.sendMessage(Component.text("Your buyback/assist request has expired!", NamedTextColor.RED));
+                    }
+                }
+            }
+        }.runTaskLater(plugin, 20 * 60);
     }
 
     /**
