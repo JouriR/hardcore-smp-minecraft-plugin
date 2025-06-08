@@ -32,10 +32,10 @@ public class PlayerDeathListener implements Listener {
     /**
      * Constructs a new {@code PlayerDeathListener} instance.
      *
-     * @param plugin The main plugin instance
+     * @param plugin     The main plugin instance
      * @param connection The active database connection
      */
-    public PlayerDeathListener(JavaPlugin plugin,  Connection connection) {
+    public PlayerDeathListener(JavaPlugin plugin, Connection connection) {
         this.plugin = plugin;
         this.connection = connection;
     }
@@ -147,9 +147,9 @@ public class PlayerDeathListener implements Listener {
      * @throws SQLException If a database error occurs while inserting
      */
     private void saveDeathToDatabase(UUID playerUuid) throws SQLException {
-        try (PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO deaths (uuid) VALUES (?)")) {
-            preparedStatement.setString(1, String.valueOf(playerUuid));
-            preparedStatement.execute();
+        try (PreparedStatement statement = connection.prepareStatement("INSERT INTO deaths (uuid) VALUES (?)")) {
+            statement.setString(1, playerUuid.toString());
+            statement.execute();
         }
     }
 }
