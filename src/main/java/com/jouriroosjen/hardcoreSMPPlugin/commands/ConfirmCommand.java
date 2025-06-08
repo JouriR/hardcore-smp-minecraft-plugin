@@ -26,7 +26,7 @@ import java.util.UUID;
  * Handles the /confirm command which allows players to confirm a pending buyback (revival).
  *
  * @author Jouri Roosjen
- * @version 0.3.0
+ * @version 0.4.0
  */
 public class ConfirmCommand implements CommandExecutor {
     private final JavaPlugin plugin;
