@@ -22,7 +22,7 @@ import java.util.UUID;
  * Handles the /confirm command which allows players to confirm a pending buyback (revival).
  *
  * @author Jouri Roosjen
- * @version 0.1.0
+ * @version 0.2.0
  */
 public class ConfirmCommand implements CommandExecutor {
     private final JavaPlugin plugin;
@@ -68,6 +68,17 @@ public class ConfirmCommand implements CommandExecutor {
         BuybackManager.PendingBuyback buyback = buybackManager.confirm(player.getUniqueId());
 
         if (buyback.percentage() == null) {
+            try {
+                addToPiggyBank(player.getUniqueId());
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Failed adding buyback to piggy bank!");
+                e.printStackTrace();
+
+                player.sendMessage(Component.text("Internal database error.", NamedTextColor.RED, TextDecoration.BOLD));
+
+                return false;
+            }
+
             return revivePlayer(buyback.target());
         }
 
@@ -142,6 +153,15 @@ public class ConfirmCommand implements CommandExecutor {
                    WHERE uuid = ?
                 """)) {
             statement.setString(1, playerUuid.toString());
+            statement.execute();
+        }
+    }
+
+    private void addToPiggyBank(UUID playerUuid) throws SQLException {
+        int amount = plugin.getConfig().getInt("piggy-bank-amounts.normal-death", 10);
+        try (PreparedStatement statement = connection.prepareStatement("INSERT INTO piggy_bank (player_uuid, amount) VALUES (?, ?)")) {
+            statement.setString(1, playerUuid.toString());
+            statement.setInt(2, amount);
             statement.execute();
         }
     }
