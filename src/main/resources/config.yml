@@ -1,2 +1,4 @@
-general:
-  death-message: "moet dokken!"
+messages:
+  death: "moet dokken!"
+  not-dead-error: "Je bent niet dood, knurft..."
+  buy-back-success: "Je bent terug gebracht!"

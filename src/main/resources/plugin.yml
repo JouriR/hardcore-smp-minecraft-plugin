@@ -9,4 +9,4 @@ website: jouriroosjen.com
 commands:
   buyback:
     description: "Buy yourself or another player back!"
-    usage: "/buyback [user] [percentage]"
+    usage: "/buyback [<user>] [<percentage>]"

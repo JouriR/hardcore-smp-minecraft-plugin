@@ -16,7 +16,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -107,14 +106,14 @@ public class PlayerDeathListener implements Listener {
         player.playSound(player, Sound.AMBIENT_CAVE, 1, 1);
 
         // Broadcast custom death message to the server
-        String deathMessage = plugin.getConfig().getString("general.death-message");
+        String deathMessage = plugin.getConfig().getString("messages.death", "has died!");
         TextComponent messageComponent = Component.text()
                 .content("[SERVER] ")
                 .color(NamedTextColor.RED)
                 .decorate(TextDecoration.BOLD)
                 .append(Component.text(player.getName(), NamedTextColor.WHITE))
                 .append(Component.text(" "))
-                .append(Component.text(Objects.requireNonNull(deathMessage), NamedTextColor.RED))
+                .append(Component.text(deathMessage, NamedTextColor.RED))
                 .build();
 
         plugin.getServer().broadcast(messageComponent);
