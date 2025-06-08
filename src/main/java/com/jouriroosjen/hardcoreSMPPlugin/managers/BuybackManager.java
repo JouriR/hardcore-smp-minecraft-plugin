@@ -23,6 +23,11 @@ public class BuybackManager {
 
     private final Map<UUID, PendingBuyback> pendingConformations = new HashMap<>();
 
+    /**
+     * Constructs a new {@code BuybackManager} instance.
+     *
+     * @param plugin The main plugin instance
+     */
     public BuybackManager(JavaPlugin plugin) {
         this.plugin = plugin;
     }
@@ -82,5 +87,12 @@ public class BuybackManager {
      */
     public PendingBuyback confirm(UUID sender) {
         return pendingConformations.remove(sender);
+    }
+
+    /**
+     * Clear all pending confirmations
+     */
+    public void clear() {
+        pendingConformations.clear();
     }
 }

@@ -13,6 +13,7 @@ import java.sql.SQLException;
 
 public final class HardcoreSMPPlugin extends JavaPlugin {
     private DatabaseManager databaseManager;
+    private BuybackManager buybackManager;
 
     @Override
     public void onEnable() {
@@ -39,7 +40,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         }
 
         // Setup managers
-        BuybackManager buybackManager = new BuybackManager(this);
+        buybackManager = new BuybackManager(this);
 
         // Register event listeners
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(this, databaseManager.connection), this);
@@ -52,6 +53,9 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        // Clear confirmations
+        buybackManager.clear();
+        
         // Close database connection
         try {
             if (databaseManager != null) databaseManager.disconnect();
