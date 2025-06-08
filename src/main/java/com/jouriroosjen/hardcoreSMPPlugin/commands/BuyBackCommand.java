@@ -84,11 +84,13 @@ public class BuyBackCommand implements CommandExecutor, TabExecutor {
                 return false;
             }
 
+            // Check if player has pending confirmations
             if (buybackManager.hasPending(player.getUniqueId())) {
                 player.sendMessage(Component.text("You still have a pending confirmation!", NamedTextColor.RED));
                 return true;
             }
 
+            // Create pending confirmation
             buybackManager.addPending(player.getUniqueId(), player.getUniqueId(), null);
             player.sendMessage(
                     Component.text("Klik hier om je buyback te bevestigen! (Of gebruik /confirm)")
@@ -101,17 +103,20 @@ public class BuyBackCommand implements CommandExecutor, TabExecutor {
             return true;
         }
 
+        // Return false if there are not enough arguments for an assist
         if (args.length != 2) return false;
 
         String targetName = args[0];
         int percentage;
 
+        // Get targeted player for assist
         Player targetPlayer = plugin.getServer().getPlayerExact(targetName);
         if (targetPlayer == null) {
             player.sendMessage(Component.text("Player not found: " + targetName, NamedTextColor.RED));
             return false;
         }
 
+        // Check if target is not the sender
         if (targetPlayer == player) {
             player.sendMessage(Component.text("You cannot assist yourself!", NamedTextColor.RED));
             return false;
@@ -129,6 +134,7 @@ public class BuyBackCommand implements CommandExecutor, TabExecutor {
             return false;
         }
 
+        // Check if target is really dead
         try {
             if (!isPlayerDead(targetPlayer.getUniqueId())) {
                 String notDeadMessage = plugin.getConfig().getString("messages.assist-not-dead-error", "is not dead!");
@@ -151,11 +157,13 @@ public class BuyBackCommand implements CommandExecutor, TabExecutor {
             return false;
         }
 
+        // Check if sender has pending confirmations
         if (buybackManager.hasPending(player.getUniqueId())) {
             player.sendMessage(Component.text("You still have a pending confirmation!", NamedTextColor.RED));
             return true;
         }
 
+        // Create pending confirmation
         buybackManager.addPending(player.getUniqueId(), targetPlayer.getUniqueId(), OptionalInt.of(percentage));
         player.sendMessage(
                 Component.text("Klik hier om je buyback assist te bevestigen! (Of gebruik /confirm)")

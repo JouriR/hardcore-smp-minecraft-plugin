@@ -18,17 +18,41 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.UUID;
 
+/**
+ * Handles the /confirm command which allows players to confirm a pending buyback (revival).
+ *
+ * @author Jouri Roosjen
+ * @version 0.1.0
+ */
 public class ConfirmCommand implements CommandExecutor {
     private final JavaPlugin plugin;
     private final Connection connection;
     private final BuybackManager buybackManager;
 
+    /**
+     * Constructs a new {@code ConfirmCommand} instance.
+     *
+     * @param plugin         The main plugin instance
+     * @param connection     The SQL database connection
+     * @param buybackManager The BuybackManager that tracks pending buybacks
+     */
     public ConfirmCommand(JavaPlugin plugin, Connection connection, BuybackManager buybackManager) {
         this.plugin = plugin;
         this.connection = connection;
         this.buybackManager = buybackManager;
     }
 
+    /**
+     * Called when a player executes the /confirm command.
+     * It checks whether the player has a pending buyback confirmation.
+     * If so, it proceeds to revive the target player stored in that buyback.
+     *
+     * @param sender  The command sender
+     * @param command The command executed
+     * @param label   The command label used
+     * @param args    The command arguments
+     * @return {@code true} if the command was processed
+     */
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
         if (!(sender instanceof Player player)) {
