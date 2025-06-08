@@ -1,10 +1,12 @@
 package com.jouriroosjen.hardcoreSMPPlugin;
 
 import com.jouriroosjen.hardcoreSMPPlugin.commands.BuyBackCommand;
+import com.jouriroosjen.hardcoreSMPPlugin.commands.ConfirmCommand;
 import com.jouriroosjen.hardcoreSMPPlugin.database.DatabaseManager;
 import com.jouriroosjen.hardcoreSMPPlugin.database.MigrationsManager;
 import com.jouriroosjen.hardcoreSMPPlugin.listeners.PlayerDeathListener;
 import com.jouriroosjen.hardcoreSMPPlugin.listeners.PlayerJoinListener;
+import com.jouriroosjen.hardcoreSMPPlugin.managers.BuybackManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.sql.SQLException;
@@ -36,12 +38,16 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
             getServer().getPluginManager().disablePlugin(this);
         }
 
+        // Setup managers
+        BuybackManager buybackManager = new BuybackManager();
+
         // Register event listeners
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(this, databaseManager.connection), this);
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(this, databaseManager.connection), this);
 
         // Register commands
-        getCommand("buyback").setExecutor(new BuyBackCommand(this, databaseManager.connection));
+        getCommand("buyback").setExecutor(new BuyBackCommand(this, databaseManager.connection, buybackManager));
+        getCommand("confirm").setExecutor(new ConfirmCommand(this, databaseManager.connection, buybackManager));
     }
 
     @Override

@@ -1,10 +1,11 @@
 package com.jouriroosjen.hardcoreSMPPlugin.commands;
 
+import com.jouriroosjen.hardcoreSMPPlugin.managers.BuybackManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -19,27 +20,31 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.UUID;
 
 /**
  * Command executor for the {@code /buyback} command, allowing dead players to revive themselves.
  *
  * @author Jouri Roosjen
- * @version 0.2.0
+ * @version 0.3.0
  */
 public class BuyBackCommand implements CommandExecutor, TabExecutor {
     private final JavaPlugin plugin;
     private final Connection connection;
+    private final BuybackManager buybackManager;
 
     /**
      * Constructs a new {@code BuyBackCommand} instance.
      *
-     * @param plugin     The main plugin instance
-     * @param connection The active database connection
+     * @param plugin         The main plugin instance
+     * @param connection     The active database connection
+     * @param buybackManager The active buyback manager
      */
-    public BuyBackCommand(JavaPlugin plugin, Connection connection) {
+    public BuyBackCommand(JavaPlugin plugin, Connection connection, BuybackManager buybackManager) {
         this.plugin = plugin;
         this.connection = connection;
+        this.buybackManager = buybackManager;
     }
 
     /**
@@ -79,7 +84,21 @@ public class BuyBackCommand implements CommandExecutor, TabExecutor {
                 return false;
             }
 
-            return revivePlayer(player);
+            if (buybackManager.hasPending(player.getUniqueId())) {
+                player.sendMessage(Component.text("You still have a pending confirmation!", NamedTextColor.RED));
+                return true;
+            }
+
+            buybackManager.addPending(player.getUniqueId(), player.getUniqueId(), null);
+            player.sendMessage(
+                    Component.text("Klik hier om je buyback te bevestigen! (Of gebruik /confirm)")
+                            .color(NamedTextColor.YELLOW)
+                            .decorate(TextDecoration.BOLD)
+                            .decorate(TextDecoration.UNDERLINED)
+                            .clickEvent(ClickEvent.runCommand("/confirm"))
+            );
+
+            return true;
         }
 
         if (args.length != 2) return false;
@@ -132,7 +151,21 @@ public class BuyBackCommand implements CommandExecutor, TabExecutor {
             return false;
         }
 
-        return revivePlayer(targetPlayer);
+        if (buybackManager.hasPending(player.getUniqueId())) {
+            player.sendMessage(Component.text("You still have a pending confirmation!", NamedTextColor.RED));
+            return true;
+        }
+
+        buybackManager.addPending(player.getUniqueId(), targetPlayer.getUniqueId(), OptionalInt.of(percentage));
+        player.sendMessage(
+                Component.text("Klik hier om je buyback assist te bevestigen! (Of gebruik /confirm)")
+                        .color(NamedTextColor.YELLOW)
+                        .decorate(TextDecoration.BOLD)
+                        .decorate(TextDecoration.UNDERLINED)
+                        .clickEvent(ClickEvent.runCommand("/confirm"))
+        );
+
+        return true;
     }
 
     /**
@@ -150,58 +183,6 @@ public class BuyBackCommand implements CommandExecutor, TabExecutor {
     }
 
     /**
-     * Revives a player.
-     * This method will:
-     * <ul>
-     *     <li>Update their status to alive in the database.</li>
-     *     <li>Teleport them to the world spawn.</li>
-     *     <li>Restore their game mode and play a sound.</li>
-     *     <li>Broadcast a confirmation message.</li>
-     * </ul>
-     *
-     * @param player The player to revive.
-     * @return {@code true} if the operation was processed (regardless of outcome), {@code false} if it failed fatally.
-     */
-    private boolean revivePlayer(Player player) {
-        try {
-            // Update alive status in database
-            updatePlayerAliveStatus(player.getUniqueId());
-
-            // Teleport to world spawn
-            World world = Bukkit.getWorlds().get(0);
-            Location spawn = world.getSpawnLocation();
-            player.teleport(spawn);
-
-            // Play sound
-            player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_BREAK, 1, 1);
-
-            // Change gamemode to survival
-            player.setGameMode(GameMode.SURVIVAL);
-
-            // Send confirm message
-            String confirmMessage = plugin.getConfig().getString("messages.buy-back-success", "You've been revived!");
-            TextComponent messageComponent = Component.text()
-                    .content("[SERVER] ")
-                    .color(NamedTextColor.GREEN)
-                    .decorate(TextDecoration.BOLD)
-                    .append(Component.text(player.getName(), NamedTextColor.WHITE))
-                    .append(Component.text(" "))
-                    .append(Component.text(confirmMessage, NamedTextColor.GREEN))
-                    .build();
-            plugin.getServer().broadcast(messageComponent);
-
-            return true;
-        } catch (SQLException e) {
-            plugin.getLogger().severe("Failed reviving player " + player.getName().trim() + "!");
-            e.printStackTrace();
-
-            player.sendMessage(Component.text("Internal database error.", NamedTextColor.RED, TextDecoration.BOLD));
-
-            return false;
-        }
-    }
-
-    /**
      * Checks if the player is currently marked as dead in the database.
      *
      * @param playerUuid The UUID of the player
@@ -215,24 +196,6 @@ public class BuyBackCommand implements CommandExecutor, TabExecutor {
             try (ResultSet resultSet = statement.executeQuery()) {
                 return resultSet.next() && resultSet.getInt("is_alive") == 0;
             }
-        }
-    }
-
-    /**
-     * Updates the player's alive status in the database to indicate they are alive.
-     *
-     * @param playerUuid The UUID of the player to update
-     * @throws SQLException If a database access error occurs
-     */
-    private void updatePlayerAliveStatus(UUID playerUuid) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement("""
-                   UPDATE players SET
-                       is_alive = 1,
-                       updated_at = datetime('now')
-                   WHERE uuid = ?
-                """)) {
-            statement.setString(1, playerUuid.toString());
-            statement.execute();
         }
     }
 }

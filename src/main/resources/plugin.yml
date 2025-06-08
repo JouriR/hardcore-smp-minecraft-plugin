@@ -10,3 +10,6 @@ commands:
   buyback:
     description: "Buy yourself or another player back!"
     usage: "/buyback [<user>] [<percentage>]"
+  confirm:
+    description: "Confirm a pending confirmation."
+    usage: "/confirm"
