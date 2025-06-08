@@ -18,10 +18,10 @@ import java.util.regex.Pattern;
  * Migration files should follow the naming convention: {@code V<version_number>__<description>.sql}
  * and be located in the {@code resources/migrations} folder.
  * <br/>
- * Example: {@code V1__create_deaths_table.sql}
+ * Example: {@code V2__create_deaths_table.sql}
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.0.1
  */
 public class MigrationsManager {
     private final JavaPlugin plugin;
@@ -30,15 +30,16 @@ public class MigrationsManager {
     /**
      * Represents a database migration file with a version number and its resource path.
      *
-     * @param version The migration version number
+     * @param version      The migration version number
      * @param resourcePath The path to the SQL file within the plugin's resources
      */
-    private record Migration(int version, String resourcePath) {}
+    private record Migration(int version, String resourcePath) {
+    }
 
     /**
      * Constructs a new {@code MigrationsManager} instance.
      *
-     * @param plugin The main plugin instance
+     * @param plugin     The main plugin instance
      * @param connection The active database connection
      */
     public MigrationsManager(JavaPlugin plugin, Connection connection) {
@@ -75,10 +76,10 @@ public class MigrationsManager {
     private void ensureSchemaTableExists() throws SQLException {
         try (Statement statement = connection.createStatement()) {
             statement.execute("""
-                CREATE TABLE IF NOT EXISTS schema_version (
-                    version INTEGER NOT NULL
-                )
-            """);
+                        CREATE TABLE IF NOT EXISTS schema_version (
+                            version INTEGER NOT NULL
+                        )
+                    """);
         }
 
         try (Statement statement = connection.createStatement()) {
@@ -100,7 +101,8 @@ public class MigrationsManager {
     private List<Migration> loadMigrations() {
         try {
             List<String> resources = Arrays.asList(
-                    "migrations/V1__create_deaths_table.sql"
+                    "migrations/V1__create_players_table.sql",
+                    "migrations/V2__create_deaths_table.sql"
             );
 
             Pattern pattern = Pattern.compile("V(\\d+)__.*\\.sql");
@@ -129,7 +131,8 @@ public class MigrationsManager {
      */
     private void applyMigration(Migration migration) throws SQLException {
         try (InputStream input = plugin.getResource(migration.resourcePath)) {
-            if (input == null) throw new RuntimeException("[DATABASE] Missing migration file: " + migration.resourcePath);
+            if (input == null)
+                throw new RuntimeException("[DATABASE] Missing migration file: " + migration.resourcePath);
 
             String sql = new BufferedReader(new InputStreamReader(input))
                     .lines()
