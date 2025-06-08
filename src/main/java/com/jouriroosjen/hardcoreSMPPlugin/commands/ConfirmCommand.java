@@ -17,6 +17,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.OptionalInt;
 import java.util.UUID;
 
@@ -30,6 +32,15 @@ public class ConfirmCommand implements CommandExecutor {
     private final JavaPlugin plugin;
     private final Connection connection;
     private final BuybackManager buybackManager;
+
+    /**
+     * Represents a buyback assist
+     *
+     * @param givingPlayer The players who's giving the assist
+     * @param amount       The assisted amount
+     */
+    private record BuybackAssist(UUID givingPlayer, double amount) {
+    }
 
     /**
      * Constructs a new {@code ConfirmCommand} instance.
@@ -71,7 +82,19 @@ public class ConfirmCommand implements CommandExecutor {
 
         if (buyback.percentage() == null) {
             try {
-                addToPiggyBank(player.getUniqueId());
+                // Get latest deathId and corresponding assists
+                OptionalInt correspondingDeathId = getLatestDeath(player.getUniqueId());
+                List<BuybackAssist> allAssists = getAllAssists(correspondingDeathId.getAsInt());
+
+                // Add all assists to piggy bank
+                for (BuybackAssist assist : allAssists) {
+                    addToPiggyBank(assist.givingPlayer(), assist.amount(), 1);
+                }
+
+                // Let the player pay remaining amount
+                int buybackAmount = plugin.getConfig().getInt("piggy-bank-amounts.normal-death", 10);
+                double totalAssistedAmount = getTotalAssistedAmount(allAssists);
+                addToPiggyBank(player.getUniqueId(), buybackAmount - totalAssistedAmount, 0);
             } catch (SQLException e) {
                 plugin.getLogger().severe("Failed adding buyback to piggy bank!");
                 e.printStackTrace();
@@ -209,13 +232,18 @@ public class ConfirmCommand implements CommandExecutor {
      * Adds amount to piggy bank.
      *
      * @param playerUuid The player that has credited this amount
+     * @param amount     The amount to be added to the bank
+     * @param isAssist   Whether this transaction is from an assist or not
      * @throws SQLException If a database error occurs
      */
-    private void addToPiggyBank(UUID playerUuid) throws SQLException {
-        int amount = plugin.getConfig().getInt("piggy-bank-amounts.normal-death", 10);
-        try (PreparedStatement statement = connection.prepareStatement("INSERT INTO piggy_bank (player_uuid, amount) VALUES (?, ?)")) {
+    private void addToPiggyBank(UUID playerUuid, double amount, int isAssist) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                INSERT INTO piggy_bank (player_uuid, amount, is_assist)
+                VALUES (?, ?, ?)
+                """)) {
             statement.setString(1, playerUuid.toString());
-            statement.setInt(2, amount);
+            statement.setDouble(2, amount);
+            statement.setInt(3, isAssist);
             statement.execute();
         }
     }
@@ -267,6 +295,13 @@ public class ConfirmCommand implements CommandExecutor {
         }
     }
 
+    /**
+     * Check the amount that is still able to be assisted with.
+     *
+     * @param deathId The corresponding deathId.
+     * @return The amount that can still be assisted with.
+     * @throws SQLException If an database error occurs.
+     */
     private double checkAmountAvailable(int deathId) throws SQLException {
         int buybackAmount = plugin.getConfig().getInt("piggy-bank-amounts.normal-death", 10);
         try (PreparedStatement statement = connection.prepareStatement("""
@@ -280,8 +315,50 @@ public class ConfirmCommand implements CommandExecutor {
                 while (resultSet.next()) {
                     assistedAmount += resultSet.getDouble("amount");
                 }
-                return buybackAmount - assistedAmount;
+                return (buybackAmount / 2.0) - assistedAmount;
             }
         }
+    }
+
+    /**
+     * Gets all assists for a given death
+     *
+     * @param deathId The corresponding deathId.
+     * @return A list containing all the assists.
+     * @throws SQLException If a database error occurs.
+     */
+    private List<BuybackAssist> getAllAssists(int deathId) throws SQLException {
+        List<BuybackAssist> assists = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT giving_player_uuid, amount
+                FROM buyback_assists
+                WHERE receiving_player_death_id = ?
+                """)) {
+            statement.setInt(1, deathId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    UUID givingPlayer = UUID.fromString(resultSet.getString("giving_player_uuid"));
+                    double amount = resultSet.getDouble("amount");
+
+                    assists.add(new BuybackAssist(givingPlayer, amount));
+                }
+            }
+        }
+        return assists;
+    }
+
+    /**
+     * Get total assisted amount of the given assists list.
+     *
+     * @param assists A list containing all the assists to count up.
+     * @return The total assisted amount.
+     */
+    private double getTotalAssistedAmount(List<BuybackAssist> assists) {
+        double total = 0;
+        for (BuybackAssist assist : assists) {
+            total += assist.amount;
+        }
+        return total;
     }
 }
