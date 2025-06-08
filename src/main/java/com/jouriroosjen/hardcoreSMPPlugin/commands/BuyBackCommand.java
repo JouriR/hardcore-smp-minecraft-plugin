@@ -23,13 +23,6 @@ import java.util.UUID;
 
 /**
  * Command executor for the {@code /buyback} command, allowing dead players to revive themselves.
- * <br/>
- * This command:
- * <ul>
- *     <li>Validates that the sender is a player.</li>
- *     <li>Checks the player's alive status in the database.</li>
- *     <li>If dead, revives them by updating the database, changing gamemode, teleporting to spawn, and broadcasting a message.</li>
- * </ul>
  *
  * @author Jouri Roosjen
  * @version 0.1.0
@@ -65,8 +58,6 @@ public class BuyBackCommand implements CommandExecutor, TabExecutor {
             return true;
         }
 
-        String playerName = player.getName().trim();
-
         if (args.length == 0) {
             try {
                 // Check if user is really dead
@@ -80,39 +71,17 @@ public class BuyBackCommand implements CommandExecutor, TabExecutor {
                     player.sendMessage(messageComponent);
                     return true;
                 }
-
-                // Update alive status in database
-                updatePlayerAliveStatus(player.getUniqueId());
-
-                // Teleport to world spawn
-                World world = Bukkit.getWorlds().get(0);
-                Location spawn = world.getSpawnLocation();
-                player.teleport(spawn);
-
-                // Play sound
-                player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_BREAK, 1, 1);
-
-                // Change gamemode to survival
-                player.setGameMode(GameMode.SURVIVAL);
-
-                // Send confirm message
-                String confirmMessage = plugin.getConfig().getString("messages.buy-back-success", "You've been revived!");
-                TextComponent messageComponent = Component.text()
-                        .content("[SERVER] ")
-                        .color(NamedTextColor.GREEN)
-                        .decorate(TextDecoration.BOLD)
-                        .append(Component.text(player.getName(), NamedTextColor.WHITE))
-                        .append(Component.text(" "))
-                        .append(Component.text(confirmMessage, NamedTextColor.GREEN))
-                        .build();
-                plugin.getServer().broadcast(messageComponent);
             } catch (SQLException e) {
-                plugin.getLogger().severe("Failed checking or reviving player " + playerName + "!");
+                plugin.getLogger().severe("Failed checking player " + player.getName().trim() + "!");
                 e.printStackTrace();
 
                 player.sendMessage(Component.text("Internal database error.", NamedTextColor.RED, TextDecoration.BOLD));
+                return true;
             }
+
+            return revivePlayer(player);
         }
+
         return true;
     }
 
@@ -128,6 +97,56 @@ public class BuyBackCommand implements CommandExecutor, TabExecutor {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
         return null;
+    }
+
+    /**
+     * Revives a player.
+     * This method will:
+     * <ul>
+     *     <li>Update their status to alive in the database.</li>
+     *     <li>Teleport them to the world spawn.</li>
+     *     <li>Restore their game mode and play a sound.</li>
+     *     <li>Broadcast a confirmation message.</li>
+     * </ul>
+     *
+     * @param player The player to revive.
+     * @return {@code true} if the operation was processed (regardless of outcome), {@code false} if it failed fatally.
+     */
+    private boolean revivePlayer(Player player) {
+        try {
+            // Update alive status in database
+            updatePlayerAliveStatus(player.getUniqueId());
+
+            // Teleport to world spawn
+            World world = Bukkit.getWorlds().get(0);
+            Location spawn = world.getSpawnLocation();
+            player.teleport(spawn);
+
+            // Play sound
+            player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_BREAK, 1, 1);
+
+            // Change gamemode to survival
+            player.setGameMode(GameMode.SURVIVAL);
+
+            // Send confirm message
+            String confirmMessage = plugin.getConfig().getString("messages.buy-back-success", "You've been revived!");
+            TextComponent messageComponent = Component.text()
+                    .content("[SERVER] ")
+                    .color(NamedTextColor.GREEN)
+                    .decorate(TextDecoration.BOLD)
+                    .append(Component.text(player.getName(), NamedTextColor.WHITE))
+                    .append(Component.text(" "))
+                    .append(Component.text(confirmMessage, NamedTextColor.GREEN))
+                    .build();
+            plugin.getServer().broadcast(messageComponent);
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed reviving player " + player.getName().trim() + "!");
+            e.printStackTrace();
+
+            player.sendMessage(Component.text("Internal database error.", NamedTextColor.RED, TextDecoration.BOLD));
+        }
+
+        return true;
     }
 
     /**
