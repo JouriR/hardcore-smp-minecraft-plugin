@@ -2,6 +2,7 @@ messages:
   death: "moet dokken!"
   not-dead-error: "Je bent niet dood, knurft..."
   assist-not-dead-error: "is niet dood, knurft..."
+  assist-created: "Jouw hulp is gewaardeerd! 🔥"
   buy-back-success: "Je bent terug gebracht!"
 piggy-bank-amounts:
   grace-period-death: 5

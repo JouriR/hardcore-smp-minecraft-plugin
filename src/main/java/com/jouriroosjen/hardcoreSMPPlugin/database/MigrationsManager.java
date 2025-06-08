@@ -103,7 +103,8 @@ public class MigrationsManager {
             List<String> resources = Arrays.asList(
                     "migrations/V1__create_players_table.sql",
                     "migrations/V2__create_deaths_table.sql",
-                    "migrations/V3__create_piggy_bank_table.sql"
+                    "migrations/V3__create_piggy_bank_table.sql",
+                    "migrations/V4__create_buyback_assists_table.sql"
             );
 
             Pattern pattern = Pattern.compile("V(\\d+)__.*\\.sql");

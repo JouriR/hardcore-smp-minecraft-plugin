@@ -15,14 +15,16 @@ import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.OptionalInt;
 import java.util.UUID;
 
 /**
  * Handles the /confirm command which allows players to confirm a pending buyback (revival).
  *
  * @author Jouri Roosjen
- * @version 0.2.0
+ * @version 0.3.0
  */
 public class ConfirmCommand implements CommandExecutor {
     private final JavaPlugin plugin;
@@ -82,7 +84,42 @@ public class ConfirmCommand implements CommandExecutor {
             return revivePlayer(buyback.target());
         }
 
-        return revivePlayer(buyback.target());
+        try {
+            // Calculate assist amount and check if that amount is still available.
+            double assistAmount = calculateAssistAmount(buyback.percentage().getAsInt());
+
+            // Get corresponding death and check if assist amount is still available.
+            OptionalInt correspondingDeathId = getLatestDeath(buyback.target());
+            double availableAmount = checkAmountAvailable(correspondingDeathId.getAsInt());
+
+            // Return message if the wanted assist amount exceeds the still available amount.
+            if (availableAmount < assistAmount) {
+                player.sendMessage(Component.text("There's not that much left for this buyback!", NamedTextColor.RED));
+                return true;
+            }
+
+            // Create assist.
+            createBuybackAssist(player.getUniqueId(), buyback.target(), correspondingDeathId.getAsInt(), assistAmount);
+
+            // Send confirm message and play a sound.
+            String assistMessage = plugin.getConfig().getString("messages.assist-created", "You're assist is placed!");
+            TextComponent messageComponent = Component.text()
+                    .content(assistMessage)
+                    .color(NamedTextColor.AQUA)
+                    .decorate(TextDecoration.BOLD)
+                    .build();
+            player.sendMessage(messageComponent);
+            player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed creating buyback assist!");
+            e.printStackTrace();
+
+            player.sendMessage(Component.text("Internal database error.", NamedTextColor.RED, TextDecoration.BOLD));
+
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -140,6 +177,17 @@ public class ConfirmCommand implements CommandExecutor {
     }
 
     /**
+     * Calculate the amount to assist based on the percentage.
+     *
+     * @param assistPercentage The percentage to assist the buyback with.
+     * @return The amount that is being assisted.
+     */
+    private double calculateAssistAmount(int assistPercentage) {
+        int buybackAmount = plugin.getConfig().getInt("piggy-bank-amounts.normal-death", 10);
+        return buybackAmount * (assistPercentage / 100.0);
+    }
+
+    /**
      * Updates the player's alive status in the database to indicate they are alive.
      *
      * @param playerUuid The UUID of the player to update
@@ -157,12 +205,83 @@ public class ConfirmCommand implements CommandExecutor {
         }
     }
 
+    /**
+     * Adds amount to piggy bank.
+     *
+     * @param playerUuid The player that has credited this amount
+     * @throws SQLException If a database error occurs
+     */
     private void addToPiggyBank(UUID playerUuid) throws SQLException {
         int amount = plugin.getConfig().getInt("piggy-bank-amounts.normal-death", 10);
         try (PreparedStatement statement = connection.prepareStatement("INSERT INTO piggy_bank (player_uuid, amount) VALUES (?, ?)")) {
             statement.setString(1, playerUuid.toString());
             statement.setInt(2, amount);
             statement.execute();
+        }
+    }
+
+    /**
+     * Get the ID of the player's last death.
+     *
+     * @param playerUuid The player of which the death ID should be.
+     * @return An optional filled with the deathId if found, otherwise empty.
+     * @throws SQLException If a database error occurs.
+     */
+    private OptionalInt getLatestDeath(UUID playerUuid) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT (id) FROM deaths
+                WHERE player_uuid = ?
+                ORDER BY datetime(created_at) DESC
+                LIMIT 1
+                """)) {
+            statement.setString(1, playerUuid.toString());
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return OptionalInt.of(resultSet.getInt("id"));
+                }
+            }
+        }
+        return OptionalInt.empty();
+    }
+
+    /**
+     * Add buyback assist to database.
+     *
+     * @param sender  The UUID of the sender.
+     * @param target  The UUID of the receiving player.
+     * @param deathId The ID of the corresponding death of the receiving player.
+     * @param amount  The amount of the assist.
+     * @throws SQLException If database error occurs.
+     */
+    private void createBuybackAssist(UUID sender, UUID target, int deathId, double amount) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                INSERT INTO buyback_assists (giving_player_uuid, receiving_player_uuid, receiving_player_death_id, amount)
+                VALUES (?, ?, ?, ?)
+                """)) {
+            statement.setString(1, sender.toString());
+            statement.setString(2, target.toString());
+            statement.setInt(3, deathId);
+            statement.setDouble(4, amount);
+            statement.execute();
+        }
+    }
+
+    private double checkAmountAvailable(int deathId) throws SQLException {
+        int buybackAmount = plugin.getConfig().getInt("piggy-bank-amounts.normal-death", 10);
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT (amount) FROM buyback_assists
+                WHERE receiving_player_death_id = ?
+                """)) {
+            statement.setInt(1, deathId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                double assistedAmount = 0;
+                while (resultSet.next()) {
+                    assistedAmount += resultSet.getDouble("amount");
+                }
+                return buybackAmount - assistedAmount;
+            }
         }
     }
 }
