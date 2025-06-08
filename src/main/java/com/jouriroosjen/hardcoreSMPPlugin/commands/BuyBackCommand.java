@@ -25,7 +25,7 @@ import java.util.UUID;
  * Command executor for the {@code /buyback} command, allowing dead players to revive themselves.
  *
  * @author Jouri Roosjen
- * @version 0.1.0
+ * @version 0.2.0
  */
 public class BuyBackCommand implements CommandExecutor, TabExecutor {
     private final JavaPlugin plugin;
@@ -76,13 +76,63 @@ public class BuyBackCommand implements CommandExecutor, TabExecutor {
                 e.printStackTrace();
 
                 player.sendMessage(Component.text("Internal database error.", NamedTextColor.RED, TextDecoration.BOLD));
-                return true;
+                return false;
             }
 
             return revivePlayer(player);
         }
 
-        return true;
+        if (args.length != 2) return false;
+
+        String targetName = args[0];
+        int percentage;
+
+        Player targetPlayer = plugin.getServer().getPlayerExact(targetName);
+        if (targetPlayer == null) {
+            player.sendMessage(Component.text("Player not found: " + targetName, NamedTextColor.RED));
+            return false;
+        }
+
+        if (targetPlayer == player) {
+            player.sendMessage(Component.text("You cannot assist yourself!", NamedTextColor.RED));
+            return false;
+        }
+
+        try {
+            percentage = Integer.parseInt(args[1]);
+
+            if (percentage < 1 || percentage > 50) {
+                player.sendMessage(Component.text("Percentage must be between 1 and 50.", NamedTextColor.RED));
+                return false;
+            }
+        } catch (NumberFormatException e) {
+            player.sendMessage(Component.text("Percentage must be a number!", NamedTextColor.RED));
+            return false;
+        }
+
+        try {
+            if (!isPlayerDead(targetPlayer.getUniqueId())) {
+                String notDeadMessage = plugin.getConfig().getString("messages.assist-not-dead-error", "is not dead!");
+                TextComponent messageComponent = Component.text()
+                        .content(targetName)
+                        .color(NamedTextColor.WHITE)
+                        .decorate(TextDecoration.BOLD)
+                        .append(Component.text(" "))
+                        .append(Component.text(notDeadMessage, NamedTextColor.RED))
+                        .build();
+                player.sendMessage(messageComponent);
+
+                return true;
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed checking player " + targetName + "!");
+            e.printStackTrace();
+            player.sendMessage(Component.text("Internal database error.", NamedTextColor.RED));
+
+            return false;
+        }
+
+        return revivePlayer(targetPlayer);
     }
 
     /**
@@ -139,14 +189,16 @@ public class BuyBackCommand implements CommandExecutor, TabExecutor {
                     .append(Component.text(confirmMessage, NamedTextColor.GREEN))
                     .build();
             plugin.getServer().broadcast(messageComponent);
+
+            return true;
         } catch (SQLException e) {
             plugin.getLogger().severe("Failed reviving player " + player.getName().trim() + "!");
             e.printStackTrace();
 
             player.sendMessage(Component.text("Internal database error.", NamedTextColor.RED, TextDecoration.BOLD));
-        }
 
-        return true;
+            return false;
+        }
     }
 
     /**

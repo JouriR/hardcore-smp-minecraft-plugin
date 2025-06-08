@@ -1,4 +1,5 @@
 messages:
   death: "moet dokken!"
   not-dead-error: "Je bent niet dood, knurft..."
+  assist-not-dead-error: "is niet dood, knurft..."
   buy-back-success: "Je bent terug gebracht!"
