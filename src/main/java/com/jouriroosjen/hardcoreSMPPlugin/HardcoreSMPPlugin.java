@@ -81,6 +81,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         // Clear managers
         buybackManager.clear();
         playtimeManager.stopAllSessions();
+        playtimeManager.stopPlaytimeTracker();
 
         // Close database connection
         try {
