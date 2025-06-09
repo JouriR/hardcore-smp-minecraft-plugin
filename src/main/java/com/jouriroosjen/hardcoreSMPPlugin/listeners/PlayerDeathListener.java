@@ -22,7 +22,7 @@ import java.util.UUID;
  * Listener class for handling player death events in the server.
  *
  * @author Jouri Roosjen
- * @version 0.2.0
+ * @version 0.2.1
  */
 public class PlayerDeathListener implements Listener {
     private final JavaPlugin plugin;
@@ -100,6 +100,9 @@ public class PlayerDeathListener implements Listener {
         player.setTotalExperience(0);
         player.setExp(0);
         player.setLevel(0);
+
+        // Fill player's hunger after "death"
+        player.setFoodLevel(20);
 
         // Set player to spectator mode and play ambient sound
         player.setGameMode(GameMode.SPECTATOR);
