@@ -5,8 +5,8 @@ messages:
   assist-created: "Jouw hulp is gewaardeerd! 🔥"
   buy-back-success: "Je bent terug gebracht!"
   penalty-given: "Speler %player% heeft een penalty van %amount% gekregen voor: %reason%!"
-  grace-over: "%player% wordt niet langer bescherm en betaald nu de volle mep!"
-  minimum-playtime-reached: "%player% heeft de minimale speltijd behaalt! 🚀"
+  grace-over: "%player% wordt niet langer beschermt en betaald nu de volle mep!"
+  minimum-playtime-reached: "%player% heeft de minimale speeltijd behaalt! 🚀"
 piggy-bank-amounts:
   grace-period-death: 5
   normal-death: 10

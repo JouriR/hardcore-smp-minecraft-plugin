@@ -21,12 +21,13 @@ import java.util.UUID;
  * Manages player playtime sessions and persists playtime data to the database.
  *
  * @author Jouri Roosjen
- * @version 0.1.0
+ * @version 1.0.0
  */
 public class PlaytimeManager {
     private final JavaPlugin plugin;
     private final Connection connection;
     private final BukkitTask playtimeTracker;
+    private final BukkitTask playtimeBackupsTask;
 
     private final Map<UUID, Long> sessionStartTimes = new HashMap<>();
 
@@ -41,6 +42,7 @@ public class PlaytimeManager {
         this.connection = connection;
 
         this.playtimeTracker = startPlaytimeTracker();
+        this.playtimeBackupsTask = startPlaytimeBackupTask();
     }
 
     /**
@@ -86,6 +88,13 @@ public class PlaytimeManager {
      */
     public void stopPlaytimeTracker() {
         playtimeTracker.cancel();
+    }
+
+    /**
+     * Stops the playtime backup task
+     */
+    public void stopPlaytimeBackupsTask() {
+        playtimeBackupsTask.cancel();
     }
 
     /**
@@ -169,6 +178,35 @@ public class PlaytimeManager {
                 }
             }
         }.runTaskTimer(plugin, 20L, 1200L); // Runs every 1200 tick (1 minute)
+    }
+
+    /**
+     * Start a playtime backup task that runs every 5 minutes.
+     * It updates the player's playtime in the database in case of a crash.
+     *
+     * @return The BukkitTask that's started
+     */
+    private BukkitTask startPlaytimeBackupTask() {
+        return new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (Map.Entry<UUID, Long> entry : sessionStartTimes.entrySet()) {
+                    UUID uuid = entry.getKey();
+                    Long startTime = entry.getValue();
+                    if (startTime == null) continue;
+
+                    long now = System.currentTimeMillis();
+                    long elapsedTimeInSeconds = (now - startTime) / 1000;
+
+                    try {
+                        updatePlaytime(uuid, elapsedTimeInSeconds);
+                    } catch (SQLException e) {
+                        plugin.getLogger().severe("Failed to update playtime (" + elapsedTimeInSeconds + ") for: " + uuid);
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, 20L, 6000L); // Runs every 6000 tick (5 minutes)
     }
 
     /**
