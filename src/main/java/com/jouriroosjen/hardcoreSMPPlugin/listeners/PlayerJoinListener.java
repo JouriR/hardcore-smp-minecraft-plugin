@@ -1,5 +1,6 @@
 package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 
+import com.jouriroosjen.hardcoreSMPPlugin.managers.PlaytimeManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -25,16 +26,19 @@ import java.util.UUID;
 public class PlayerJoinListener implements Listener {
     private final JavaPlugin plugin;
     private final Connection connection;
+    private final PlaytimeManager playtimeManager;
 
     /**
      * Constructs a new {@code PlayerJoinListener} instance.
      *
-     * @param plugin     The main plugin instance
-     * @param connection The active database connection
+     * @param plugin          The main plugin instance
+     * @param connection      The active database connection
+     * @param playtimeManager The playtime manager instance
      */
-    public PlayerJoinListener(JavaPlugin plugin, Connection connection) {
+    public PlayerJoinListener(JavaPlugin plugin, Connection connection, PlaytimeManager playtimeManager) {
         this.plugin = plugin;
         this.connection = connection;
+        this.playtimeManager = playtimeManager;
     }
 
     /**
@@ -50,8 +54,9 @@ public class PlayerJoinListener implements Listener {
         String playerUsername = player.getName().trim();
 
         try {
-            if (!checkPlayerFirstJoin(playerUuid)) return;
-            savePlayerToDatabase(playerUuid, playerUsername);
+            if (checkPlayerFirstJoin(playerUuid)) {
+                savePlayerToDatabase(playerUuid, playerUsername);
+            }
         } catch (SQLException e) {
             TextComponent messageComponent = Component.text()
                     .content("Internal error!")
@@ -63,6 +68,8 @@ public class PlayerJoinListener implements Listener {
             plugin.getLogger().severe("Failed to check OR save first join of: " + playerUsername);
             e.printStackTrace();
         }
+
+        playtimeManager.startSession(playerUuid);
     }
 
     /**
