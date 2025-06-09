@@ -26,7 +26,7 @@ import java.util.UUID;
  * Handles the /confirm command which allows players to confirm a pending buyback (revival).
  *
  * @author Jouri Roosjen
- * @version 0.4.0
+ * @version 1.0.0
  */
 public class ConfirmCommand implements CommandExecutor {
     private final JavaPlugin plugin;
@@ -79,6 +79,16 @@ public class ConfirmCommand implements CommandExecutor {
         }
 
         BuybackManager.PendingBuyback buyback = buybackManager.confirm(player.getUniqueId());
+        int buybackAmount;
+        try {
+            buybackAmount = getBuybackPrice(buyback.target());
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed getting buyback price!");
+            e.printStackTrace();
+
+            player.sendMessage(Component.text("Internal database error.", NamedTextColor.RED, TextDecoration.BOLD));
+            return false;
+        }
 
         if (buyback.percentage() == null) {
             try {
@@ -92,7 +102,6 @@ public class ConfirmCommand implements CommandExecutor {
                 }
 
                 // Let the player pay remaining amount
-                int buybackAmount = plugin.getConfig().getInt("piggy-bank-amounts.normal-death", 10);
                 double totalAssistedAmount = getTotalAssistedAmount(allAssists);
                 addToPiggyBank(player.getUniqueId(), buybackAmount - totalAssistedAmount, 0);
             } catch (SQLException e) {
@@ -108,11 +117,11 @@ public class ConfirmCommand implements CommandExecutor {
 
         try {
             // Calculate assist amount and check if that amount is still available.
-            double assistAmount = calculateAssistAmount(buyback.percentage().getAsInt());
+            double assistAmount = calculateAssistAmount(buyback.target(), buyback.percentage().getAsInt(), buybackAmount);
 
             // Get corresponding death and check if assist amount is still available.
             OptionalInt correspondingDeathId = getLatestDeath(buyback.target());
-            double availableAmount = checkAmountAvailable(correspondingDeathId.getAsInt());
+            double availableAmount = checkAmountAvailable(correspondingDeathId.getAsInt(), buybackAmount);
 
             // Return message if the wanted assist amount exceeds the still available amount.
             if (availableAmount < assistAmount) {
@@ -201,11 +210,12 @@ public class ConfirmCommand implements CommandExecutor {
     /**
      * Calculate the amount to assist based on the percentage.
      *
+     * @param targetUuid       The target's UUID
      * @param assistPercentage The percentage to assist the buyback with.
+     * @param buybackAmount    The price of the buyback
      * @return The amount that is being assisted.
      */
-    private double calculateAssistAmount(int assistPercentage) {
-        int buybackAmount = plugin.getConfig().getInt("piggy-bank-amounts.normal-death", 10);
+    private double calculateAssistAmount(UUID targetUuid, int assistPercentage, int buybackAmount) {
         return buybackAmount * (assistPercentage / 100.0);
     }
 
@@ -297,12 +307,12 @@ public class ConfirmCommand implements CommandExecutor {
     /**
      * Check the amount that is still able to be assisted with.
      *
-     * @param deathId The corresponding deathId.
+     * @param deathId      The corresponding deathId.
+     * @param buybackPrice The price of the buyback
      * @return The amount that can still be assisted with.
      * @throws SQLException If an database error occurs.
      */
-    private double checkAmountAvailable(int deathId) throws SQLException {
-        int buybackAmount = plugin.getConfig().getInt("piggy-bank-amounts.normal-death", 10);
+    private double checkAmountAvailable(int deathId, int buybackPrice) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement("""
                 SELECT (amount) FROM buyback_assists
                 WHERE receiving_player_death_id = ?
@@ -314,7 +324,7 @@ public class ConfirmCommand implements CommandExecutor {
                 while (resultSet.next()) {
                     assistedAmount += resultSet.getDouble("amount");
                 }
-                return (buybackAmount / 2.0) - assistedAmount;
+                return (buybackPrice / 2.0) - assistedAmount;
             }
         }
     }
@@ -359,5 +369,30 @@ public class ConfirmCommand implements CommandExecutor {
             total += assist.amount;
         }
         return total;
+    }
+
+    /**
+     * Get the current buyback price for the given player.
+     *
+     * @param playerUuid The player's UUID
+     * @return The buyback price
+     * @throws SQLException If a database error occurs
+     */
+    private int getBuybackPrice(UUID playerUuid) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                        SELECT (has_grace)
+                        FROM players
+                        WHERE uuid = ?
+                """)) {
+            statement.setString(1, playerUuid.toString());
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next() && resultSet.getBoolean("has_grace")) {
+                    return plugin.getConfig().getInt("piggy-bank-amounts.grace-period-death", 5);
+                }
+            }
+        }
+
+        return plugin.getConfig().getInt("piggy-bank-amounts.normal-death", 10);
     }
 }
