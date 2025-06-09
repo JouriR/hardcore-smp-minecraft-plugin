@@ -4,8 +4,7 @@ messages:
   assist-not-dead-error: "is niet dood, knurft..."
   assist-created: "Jouw hulp is gewaardeerd! 🔥"
   buy-back-success: "Je bent terug gebracht!"
+  penalty-given: "Speler %player% heeft een penalty van %amount% gekregen voor: %reason%!"
 piggy-bank-amounts:
   grace-period-death: 5
   normal-death: 10
-  combat-log-penalty: 10
-  cheat-penalty: 100

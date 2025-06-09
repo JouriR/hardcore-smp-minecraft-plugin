@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
  * Example: {@code V2__create_deaths_table.sql}
  *
  * @author Jouri Roosjen
- * @version 1.0.1
+ * @version 1.0.2
  */
 public class MigrationsManager {
     private final JavaPlugin plugin;
@@ -104,7 +104,8 @@ public class MigrationsManager {
                     "migrations/V1__create_players_table.sql",
                     "migrations/V2__create_deaths_table.sql",
                     "migrations/V3__create_piggy_bank_table.sql",
-                    "migrations/V4__create_buyback_assists_table.sql"
+                    "migrations/V4__create_buyback_assists_table.sql",
+                    "migrations/V5__create_penalties_table.sql"
             );
 
             Pattern pattern = Pattern.compile("V(\\d+)__.*\\.sql");

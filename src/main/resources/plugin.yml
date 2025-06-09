@@ -13,3 +13,6 @@ commands:
   confirm:
     description: "Confirm a pending confirmation."
     usage: "/confirm"
+  penalize:
+    description: "Penalize a player when they cheated."
+    usage: "/penalize <user> <amount> <reason>"

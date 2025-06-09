@@ -2,6 +2,7 @@ package com.jouriroosjen.hardcoreSMPPlugin;
 
 import com.jouriroosjen.hardcoreSMPPlugin.commands.BuyBackCommand;
 import com.jouriroosjen.hardcoreSMPPlugin.commands.ConfirmCommand;
+import com.jouriroosjen.hardcoreSMPPlugin.commands.PenalizeCommand;
 import com.jouriroosjen.hardcoreSMPPlugin.database.DatabaseManager;
 import com.jouriroosjen.hardcoreSMPPlugin.database.MigrationsManager;
 import com.jouriroosjen.hardcoreSMPPlugin.listeners.PlayerDeathListener;
@@ -49,13 +50,14 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         // Register commands
         getCommand("buyback").setExecutor(new BuyBackCommand(this, databaseManager.connection, buybackManager));
         getCommand("confirm").setExecutor(new ConfirmCommand(this, databaseManager.connection, buybackManager));
+        getCommand("penalize").setExecutor(new PenalizeCommand(this, databaseManager.connection));
     }
 
     @Override
     public void onDisable() {
         // Clear confirmations
         buybackManager.clear();
-        
+
         // Close database connection
         try {
             if (databaseManager != null) databaseManager.disconnect();

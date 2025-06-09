@@ -100,7 +100,6 @@ public class ConfirmCommand implements CommandExecutor {
                 e.printStackTrace();
 
                 player.sendMessage(Component.text("Internal database error.", NamedTextColor.RED, TextDecoration.BOLD));
-
                 return false;
             }
 

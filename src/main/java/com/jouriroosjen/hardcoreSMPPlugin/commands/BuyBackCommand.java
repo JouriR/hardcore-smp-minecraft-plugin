@@ -9,17 +9,14 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.OptionalInt;
 import java.util.UUID;
 
@@ -27,9 +24,9 @@ import java.util.UUID;
  * Command executor for the {@code /buyback} command, allowing dead players to revive themselves.
  *
  * @author Jouri Roosjen
- * @version 0.3.0
+ * @version 0.4.0
  */
-public class BuyBackCommand implements CommandExecutor, TabExecutor {
+public class BuyBackCommand implements CommandExecutor {
     private final JavaPlugin plugin;
     private final Connection connection;
     private final BuybackManager buybackManager;
@@ -174,20 +171,6 @@ public class BuyBackCommand implements CommandExecutor, TabExecutor {
         );
 
         return true;
-    }
-
-    /**
-     * Tab completer method (not used, yet).
-     *
-     * @param sender  The source of the command
-     * @param command The command being executed
-     * @param label   The command alias
-     * @param args    The passed command arguments
-     * @return List of suggestions or {@code null} if no suggestions
-     */
-    @Override
-    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
-        return null;
     }
 
     /**
