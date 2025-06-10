@@ -13,6 +13,9 @@ commands:
   confirm:
     description: "Confirm a pending confirmation."
     usage: "/confirm"
+  my-debt:
+    description: "Show you're debt to the piggy bank."
+    usage: "/my-debt"
   penalize:
     description: "Penalize a player when they cheated."
     usage: "/penalize <user> <amount> <reason>"

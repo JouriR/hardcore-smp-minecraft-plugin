@@ -2,6 +2,7 @@ package com.jouriroosjen.hardcoreSMPPlugin;
 
 import com.jouriroosjen.hardcoreSMPPlugin.commands.BuyBackCommand;
 import com.jouriroosjen.hardcoreSMPPlugin.commands.ConfirmCommand;
+import com.jouriroosjen.hardcoreSMPPlugin.commands.MyDebtCommand;
 import com.jouriroosjen.hardcoreSMPPlugin.commands.PenalizeCommand;
 import com.jouriroosjen.hardcoreSMPPlugin.database.DatabaseManager;
 import com.jouriroosjen.hardcoreSMPPlugin.database.MigrationsManager;
@@ -70,6 +71,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         // Register commands
         getCommand("buyback").setExecutor(new BuyBackCommand(this, databaseManager.connection, buybackManager));
         getCommand("confirm").setExecutor(new ConfirmCommand(this, databaseManager.connection, buybackManager));
+        getCommand("my-debt").setExecutor(new MyDebtCommand(this, databaseManager.connection));
         getCommand("penalize").setExecutor(new PenalizeCommand(this, databaseManager.connection));
     }
 
