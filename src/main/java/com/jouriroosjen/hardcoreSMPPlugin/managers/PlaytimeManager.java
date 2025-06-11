@@ -77,8 +77,9 @@ public class PlaytimeManager {
 
         try {
             updatePlaytime(uuid, elapsedTimeInSeconds);
+            addSessionToDatabase(uuid, elapsedTimeInSeconds);
         } catch (SQLException e) {
-            plugin.getLogger().severe("Failed to save playtime (" + elapsedTimeInSeconds + ") of: " + uuid);
+            plugin.getLogger().severe("Failed to correctly handle session closure of: " + uuid);
             e.printStackTrace();
         }
     }
@@ -325,6 +326,24 @@ public class PlaytimeManager {
                 """)) {
             statement.setString(1, uuid.toString());
             statement.executeUpdate();
+        }
+    }
+
+    /**
+     * Inserts a players session in the sessions table
+     *
+     * @param uuid                 The player's UUID
+     * @param elapsedTimeInSeconds The session time in seconds
+     * @throws SQLException If a database error occurs
+     */
+    private void addSessionToDatabase(UUID uuid, long elapsedTimeInSeconds) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                        INSERT INTO sessions (player_uuid, playtime_seconds)
+                        VALUES (?,?)
+                """)) {
+            statement.setString(1, uuid.toString());
+            statement.setLong(2, elapsedTimeInSeconds);
+            statement.execute();
         }
     }
 }
