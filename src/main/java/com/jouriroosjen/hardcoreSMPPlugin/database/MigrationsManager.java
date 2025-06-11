@@ -105,7 +105,8 @@ public class MigrationsManager {
                     "migrations/V2__create_deaths_table.sql",
                     "migrations/V3__create_piggy_bank_table.sql",
                     "migrations/V4__create_buyback_assists_table.sql",
-                    "migrations/V5__create_penalties_table.sql"
+                    "migrations/V5__create_penalties_table.sql",
+                    "migrations/V6__create_sessions_table.sql"
             );
 
             Pattern pattern = Pattern.compile("V(\\d+)__.*\\.sql");
