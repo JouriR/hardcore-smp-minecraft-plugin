@@ -18,15 +18,36 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ * Command executor for the {@code /place-hologram} command.
+ *
+ * @author Jouri Roosjen
+ * @version 1.0.0
+ */
 public class PlaceHologramCommand implements CommandExecutor {
     private final JavaPlugin plugin;
     private final Connection connection;
 
+    /**
+     * Constructs a new {@code PlaceHologramCommand} instance.
+     *
+     * @param plugin     The main plugin instance.
+     * @param connection The active database connection.
+     */
     public PlaceHologramCommand(JavaPlugin plugin, Connection connection) {
         this.plugin = plugin;
         this.connection = connection;
     }
 
+    /**
+     * Executes the place-hologram command logic when a player runs it.
+     *
+     * @param sender  The source of the command
+     * @param command The command that was executed
+     * @param label   The alias used
+     * @param args    The command arguments
+     * @return {@code true} if the command was handled, {@code false} otherwise
+     */
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
         if (!(sender instanceof Player player)) {
@@ -69,6 +90,12 @@ public class PlaceHologramCommand implements CommandExecutor {
         return true;
     }
 
+    /**
+     * Gets the total amount currently in the piggy bank.
+     *
+     * @return The total amount stored in the piggy bank.
+     * @throws SQLException If a database error occurs.
+     */
     private double getPiggyBankTotal() throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement("""
                 SELECT SUM(amount) AS total
