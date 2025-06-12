@@ -1,9 +1,6 @@
 package com.jouriroosjen.hardcoreSMPPlugin;
 
-import com.jouriroosjen.hardcoreSMPPlugin.commands.BuyBackCommand;
-import com.jouriroosjen.hardcoreSMPPlugin.commands.ConfirmCommand;
-import com.jouriroosjen.hardcoreSMPPlugin.commands.MyDebtCommand;
-import com.jouriroosjen.hardcoreSMPPlugin.commands.PenalizeCommand;
+import com.jouriroosjen.hardcoreSMPPlugin.commands.*;
 import com.jouriroosjen.hardcoreSMPPlugin.database.DatabaseManager;
 import com.jouriroosjen.hardcoreSMPPlugin.database.MigrationsManager;
 import com.jouriroosjen.hardcoreSMPPlugin.listeners.PlayerDeathListener;
@@ -73,6 +70,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         getCommand("confirm").setExecutor(new ConfirmCommand(this, databaseManager.connection, buybackManager));
         getCommand("my-debt").setExecutor(new MyDebtCommand(this, databaseManager.connection));
         getCommand("penalize").setExecutor(new PenalizeCommand(this, databaseManager.connection));
+        getCommand("place-hologram").setExecutor(new PlaceHologramCommand(this, databaseManager.connection));
     }
 
     /**

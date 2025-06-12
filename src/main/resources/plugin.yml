@@ -24,3 +24,6 @@ commands:
   penalize:
     description: "Penalize a player when they cheated."
     usage: "/penalize <user> <amount> <reason>"
+  place-hologram:
+    description: "Places the specified hologram on your location."
+    usage: "/place-hologram <hologram-type>"
