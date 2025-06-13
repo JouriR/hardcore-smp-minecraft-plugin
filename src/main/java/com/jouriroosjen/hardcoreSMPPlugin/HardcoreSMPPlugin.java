@@ -75,9 +75,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
 
         // Register commands
         getCommand("buyback").setExecutor(new BuyBackCommand(this, databaseManager.connection, buybackManager));
-        getCommand("confirm").setExecutor(new ConfirmCommand(this, databaseManager.connection, buybackManager));
         getCommand("my-debt").setExecutor(new MyDebtCommand(this, databaseManager.connection));
-        getCommand("penalize").setExecutor(new PenalizeCommand(this, databaseManager.connection));
 
         // Delay hologram features registration until DecentHolograms is loaded
         if (Bukkit.getPluginManager().isPluginEnabled("DecentHolograms")) {
@@ -123,6 +121,8 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         hologramManager = new HologramManager(DecentHologramsAPI.get(), this, databaseManager.connection);
 
         // Register commands
+        getCommand("confirm").setExecutor(new ConfirmCommand(this, databaseManager.connection, buybackManager, hologramManager));
+        getCommand("penalize").setExecutor(new PenalizeCommand(this, databaseManager.connection, hologramManager));
         getCommand("place-hologram").setExecutor(new PlaceHologramCommand(hologramManager));
     }
 }

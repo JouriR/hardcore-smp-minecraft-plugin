@@ -60,6 +60,32 @@ public class HologramManager extends eu.decentsoftware.holograms.api.holograms.H
     }
 
     /**
+     * Update the specified hologram with new data.
+     *
+     * @param hologramName The name of the hologram to update.
+     */
+    public void updateHologram(HologramEnum hologramName) {
+        Hologram hologram = this.getHologram(hologramName.toString());
+        if (hologram == null) {
+            plugin.getLogger().severe("Failed to get hologram: " + hologramName);
+            return;
+        }
+
+        switch (hologramName) {
+            case PIGGY_BANK -> {
+                try {
+                    double piggyBankAmmount = getPiggyBankTotal();
+                    DHAPI.setHologramLine(hologram, 1, "€" + piggyBankAmmount);
+                } catch (SQLException e) {
+                    plugin.getLogger().severe("Failed to update piggy bank hologram!");
+                    e.printStackTrace();
+                }
+            }
+            default -> plugin.getLogger().severe("Unknown hologram type!");
+        }
+    }
+
+    /**
      * Fill given hologram for piggy bank showcase
      *
      * @param hologram The hologram instance to fill.

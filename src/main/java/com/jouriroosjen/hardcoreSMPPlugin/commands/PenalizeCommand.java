@@ -1,5 +1,7 @@
 package com.jouriroosjen.hardcoreSMPPlugin.commands;
 
+import com.jouriroosjen.hardcoreSMPPlugin.enums.HologramEnum;
+import com.jouriroosjen.hardcoreSMPPlugin.managers.HologramManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -26,16 +28,19 @@ import java.util.Arrays;
 public class PenalizeCommand implements CommandExecutor {
     private final JavaPlugin plugin;
     private final Connection connection;
+    private final HologramManager hologramManager;
 
     /**
      * Constructs a new {@code PenalizeCommand} instance.
      *
-     * @param plugin     The main plugin instance
-     * @param connection The SQL connection used for database operations
+     * @param plugin          The main plugin instance
+     * @param connection      The SQL connection used for database operations
+     * @param hologramManager The HologramManager instance
      */
-    public PenalizeCommand(JavaPlugin plugin, Connection connection) {
+    public PenalizeCommand(JavaPlugin plugin, Connection connection, HologramManager hologramManager) {
         this.plugin = plugin;
         this.connection = connection;
+        this.hologramManager = hologramManager;
     }
 
     /**
@@ -75,6 +80,7 @@ public class PenalizeCommand implements CommandExecutor {
         try {
             addPenalty(targetPlayer, penaltyAmount, penaltyReason);
             addToPiggyBank(targetPlayer, penaltyAmount);
+            hologramManager.updateHologram(HologramEnum.PIGGY_BANK);
         } catch (SQLException e) {
             plugin.getLogger().severe("Failed creating penalty!");
             e.printStackTrace();

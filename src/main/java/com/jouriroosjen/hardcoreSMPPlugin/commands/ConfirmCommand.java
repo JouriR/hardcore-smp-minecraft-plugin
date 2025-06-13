@@ -1,6 +1,8 @@
 package com.jouriroosjen.hardcoreSMPPlugin.commands;
 
+import com.jouriroosjen.hardcoreSMPPlugin.enums.HologramEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.BuybackManager;
+import com.jouriroosjen.hardcoreSMPPlugin.managers.HologramManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -32,6 +34,7 @@ public class ConfirmCommand implements CommandExecutor {
     private final JavaPlugin plugin;
     private final Connection connection;
     private final BuybackManager buybackManager;
+    private final HologramManager hologramManager;
 
     /**
      * Represents a buyback assist
@@ -45,14 +48,16 @@ public class ConfirmCommand implements CommandExecutor {
     /**
      * Constructs a new {@code ConfirmCommand} instance.
      *
-     * @param plugin         The main plugin instance
-     * @param connection     The SQL database connection
-     * @param buybackManager The BuybackManager that tracks pending buybacks
+     * @param plugin          The main plugin instance
+     * @param connection      The SQL database connection
+     * @param buybackManager  The BuybackManager that tracks pending buybacks
+     * @param hologramManager The HologramManager instance
      */
-    public ConfirmCommand(JavaPlugin plugin, Connection connection, BuybackManager buybackManager) {
+    public ConfirmCommand(JavaPlugin plugin, Connection connection, BuybackManager buybackManager, HologramManager hologramManager) {
         this.plugin = plugin;
         this.connection = connection;
         this.buybackManager = buybackManager;
+        this.hologramManager = hologramManager;
     }
 
     /**
@@ -104,6 +109,7 @@ public class ConfirmCommand implements CommandExecutor {
                 // Let the player pay remaining amount
                 double totalAssistedAmount = getTotalAssistedAmount(allAssists);
                 addToPiggyBank(player.getUniqueId(), buybackAmount - totalAssistedAmount, 0);
+                hologramManager.updateHologram(HologramEnum.PIGGY_BANK);
             } catch (SQLException e) {
                 plugin.getLogger().severe("Failed adding buyback to piggy bank!");
                 e.printStackTrace();
