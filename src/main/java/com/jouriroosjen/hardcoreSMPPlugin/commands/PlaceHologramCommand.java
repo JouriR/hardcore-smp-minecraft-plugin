@@ -9,8 +9,13 @@ import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Command executor for the {@code /place-hologram} command.
@@ -18,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Jouri Roosjen
  * @version 1.0.0
  */
-public class PlaceHologramCommand implements CommandExecutor {
+public class PlaceHologramCommand implements CommandExecutor, TabExecutor {
     private final HologramManager hologramManager;
 
     /**
@@ -63,6 +68,24 @@ public class PlaceHologramCommand implements CommandExecutor {
         hologramManager.createHologram(hologramName, hologramLocation, HologramEnum.valueOf(hologramName), player);
 
         return true;
+    }
+
+    /**
+     * Executes the tab completion logic for the command.
+     *
+     * @param sender  The source of the command.
+     * @param command The command that was executed.
+     * @param label   The alias used.
+     * @param args    The command arguments.
+     * @return A {@code List<String>} containing the possible options.
+     */
+    @Override
+    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
+        List<String> completions = new ArrayList<>();
+        for (HologramEnum hologramEnum : HologramEnum.values()) {
+            completions.add(hologramEnum.toString());
+        }
+        return completions;
     }
 
     /**
