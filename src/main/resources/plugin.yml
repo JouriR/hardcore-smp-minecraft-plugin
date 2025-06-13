@@ -26,4 +26,4 @@ commands:
     usage: "/penalize <user> <amount> <reason>"
   place-hologram:
     description: "Places the specified hologram on your location."
-    usage: "/place-hologram <hologram-type>"
+    usage: "/place-hologram <PIGGY_BANK | PENALTIES | DEATHS | ASSISTS>"

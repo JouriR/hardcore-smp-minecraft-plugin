@@ -8,7 +8,14 @@ import com.jouriroosjen.hardcoreSMPPlugin.listeners.PlayerJoinListener;
 import com.jouriroosjen.hardcoreSMPPlugin.listeners.PlayerKickListener;
 import com.jouriroosjen.hardcoreSMPPlugin.listeners.PlayerQuitListener;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.BuybackManager;
+import com.jouriroosjen.hardcoreSMPPlugin.managers.HologramManager;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlaytimeManager;
+import eu.decentsoftware.holograms.api.DecentHologramsAPI;
+import org.bukkit.Bukkit;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
+import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.sql.SQLException;
@@ -26,6 +33,7 @@ import java.sql.SQLException;
 public final class HardcoreSMPPlugin extends JavaPlugin {
     private DatabaseManager databaseManager;
     private BuybackManager buybackManager;
+    private HologramManager hologramManager;
     private PlaytimeManager playtimeManager;
 
     /**
@@ -70,7 +78,21 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         getCommand("confirm").setExecutor(new ConfirmCommand(this, databaseManager.connection, buybackManager));
         getCommand("my-debt").setExecutor(new MyDebtCommand(this, databaseManager.connection));
         getCommand("penalize").setExecutor(new PenalizeCommand(this, databaseManager.connection));
-        getCommand("place-hologram").setExecutor(new PlaceHologramCommand(this, databaseManager.connection));
+
+        // Delay hologram features registration until DecentHolograms is loaded
+        if (Bukkit.getPluginManager().isPluginEnabled("DecentHolograms")) {
+            initHologramFeatures();
+        } else {
+            getServer().getPluginManager().registerEvents(new Listener() {
+                @EventHandler
+                public void onPluginEnable(PluginEnableEvent event) {
+                    if (event.getPlugin().getName().equals("DecentHolograms")) {
+                        initHologramFeatures();
+                        HandlerList.unregisterAll(this);
+                    }
+                }
+            }, this);
+        }
     }
 
     /**
@@ -80,6 +102,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
     public void onDisable() {
         // Clear managers
         buybackManager.clear();
+        hologramManager.destroy();
         playtimeManager.stopAllSessions();
         playtimeManager.stopPlaytimeTracker();
         playtimeManager.stopPlaytimeBackupsTask();
@@ -90,5 +113,16 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Initialize features that need the hologram manager
+     */
+    private void initHologramFeatures() {
+        // Setup hologram manager
+        hologramManager = new HologramManager(DecentHologramsAPI.get(), this, databaseManager.connection);
+
+        // Register commands
+        getCommand("place-hologram").setExecutor(new PlaceHologramCommand(hologramManager));
     }
 }
