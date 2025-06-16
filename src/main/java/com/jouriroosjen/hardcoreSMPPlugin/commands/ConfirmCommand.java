@@ -137,6 +137,7 @@ public class ConfirmCommand implements CommandExecutor {
 
             // Create assist.
             createBuybackAssist(player.getUniqueId(), buyback.target(), correspondingDeathId.getAsInt(), assistAmount);
+            hologramManager.updateHologram(HologramEnum.LATEST_ASSIST);
 
             // Send confirm message and play a sound.
             String assistMessage = plugin.getConfig().getString("messages.assist-created", "You're assist is placed!");

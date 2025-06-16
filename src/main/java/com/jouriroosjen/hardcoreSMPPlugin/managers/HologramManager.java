@@ -59,6 +59,10 @@ public class HologramManager extends eu.decentsoftware.holograms.api.holograms.H
                 Hologram hologram = DHAPI.createHologram(hologramName, hologramLocation, true);
                 constructLatestDeathHologram(hologram, player);
             }
+            case LATEST_ASSIST -> {
+                Hologram hologram = DHAPI.createHologram(hologramName, hologramLocation, true);
+                constructLatestAssistHologram(hologram, player);
+            }
             default ->
                     player.sendMessage(Component.text("Unknown hologram type!", NamedTextColor.RED, TextDecoration.BOLD));
         }
@@ -97,6 +101,20 @@ public class HologramManager extends eu.decentsoftware.holograms.api.holograms.H
                     DHAPI.setHologramLine(hologram, 2, "#HEAD: PLAYER_HEAD (" + deathPlayer.getName() + ")");
                 } catch (SQLException e) {
                     plugin.getLogger().severe("Failed to update latest death hologram!");
+                    e.printStackTrace();
+                }
+            }
+            case LATEST_ASSIST -> {
+                try {
+                    UUID assistPlayerUuid = getLatestAssistUuid();
+                    Player assistPlayer = plugin.getServer().getPlayer(assistPlayerUuid);
+                    String assistHologramText = plugin.getConfig().getString("holograms.latest-assist", "Latest assist:");
+
+                    DHAPI.setHologramLine(hologram, 0, "&2&l&n" + assistHologramText);
+                    DHAPI.setHologramLine(hologram, 1, assistPlayer.getName());
+                    DHAPI.setHologramLine(hologram, 2, "#HEAD: PLAYER_HEAD (" + assistPlayer.getName() + ")");
+                } catch (SQLException e) {
+                    plugin.getLogger().severe("Failed to update latest assist hologram!");
                     e.printStackTrace();
                 }
             }
@@ -168,6 +186,42 @@ public class HologramManager extends eu.decentsoftware.holograms.api.holograms.H
     }
 
     /**
+     * Fill given hologram for latest assist hologram
+     *
+     * @param hologram The hologram to be filled
+     * @param player   The player trying to create the hologram
+     */
+    private void constructLatestAssistHologram(Hologram hologram, Player player) {
+        UUID latestAssistPlayerUuid;
+        try {
+            latestAssistPlayerUuid = getLatestAssistUuid();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to get latest assist UUID!");
+            e.printStackTrace();
+
+            player.sendMessage(Component.text("Internal database error.", NamedTextColor.RED, TextDecoration.BOLD));
+            return;
+        }
+
+        if (latestAssistPlayerUuid != null) {
+            String latestAssistHologramText = plugin.getConfig().getString("holograms.latest-assist", "Latest assist:");
+            Player latestAssistPlayer = plugin.getServer().getPlayer(latestAssistPlayerUuid);
+
+            DHAPI.addHologramLine(hologram, "&2&l&n" + latestAssistHologramText);
+            DHAPI.addHologramLine(hologram, latestAssistPlayer.getName());
+            DHAPI.addHologramLine(hologram, "#HEAD: PLAYER_HEAD (" + latestAssistPlayer.getName() + ")");
+        } else {
+            String noLatestAssistText = plugin.getConfig().getString("holograms.no-latest-assist", "No assists yet!");
+
+            DHAPI.addHologramLine(hologram, "&2&l&n" + noLatestAssistText);
+            DHAPI.addHologramLine(hologram, "");
+            DHAPI.addHologramLine(hologram, "");
+        }
+
+        this.registerHologram(hologram);
+    }
+
+    /**
      * Gets the total amount currently in the piggy bank.
      *
      * @return The total amount stored in the piggy bank.
@@ -203,6 +257,27 @@ public class HologramManager extends eu.decentsoftware.holograms.api.holograms.H
 
             if (resultSet.next()) {
                 return UUID.fromString(resultSet.getString("player_uuid"));
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get the player UUID of the latest assist
+     *
+     * @return A player UUID
+     * @throws SQLException If a database error occurs
+     */
+    private UUID getLatestAssistUuid() throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT (giving_player_uuid) FROM buyback_assists
+                ORDER BY datetime(created_at) DESC
+                LIMIT 1
+                """)) {
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                return UUID.fromString(resultSet.getString("giving_player_uuid"));
             }
         }
         return null;
