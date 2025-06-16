@@ -114,10 +114,10 @@ public class BuyBackCommand implements CommandExecutor {
         }
 
         // Check if target is not the sender
-//        if (targetPlayer == player) {
-//            player.sendMessage(Component.text("You cannot assist yourself!", NamedTextColor.RED));
-//            return false;
-//        }
+        if (targetPlayer == player) {
+            player.sendMessage(Component.text("You cannot assist yourself!", NamedTextColor.RED));
+            return false;
+        }
 
         try {
             percentage = Integer.parseInt(args[1]);
