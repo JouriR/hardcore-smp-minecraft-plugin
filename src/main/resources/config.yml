@@ -1,4 +1,7 @@
-piggy-bank-name: "Het spek varken"
+holograms:
+  piggy-bank-name: "Het spek varken"
+  latest-death: "De laatste die gesneuveld is:"
+  no-latest-death: "Er is nog niemand gesneuveld!"
 messages:
   death: "moet dokken!"
   not-dead-error: "Je bent niet dood, knurft..."

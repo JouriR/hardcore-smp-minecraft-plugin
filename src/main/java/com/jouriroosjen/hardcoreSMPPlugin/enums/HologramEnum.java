@@ -2,7 +2,7 @@ package com.jouriroosjen.hardcoreSMPPlugin.enums;
 
 public enum HologramEnum {
     PIGGY_BANK,
-    PENALTIES,
-    DEATHS,
-    ASSISTS
+    LATEST_DEATH,
+    LATEST_PENALTY,
+    LATEST_ASSIST
 }

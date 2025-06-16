@@ -15,6 +15,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.UUID;
 
 /**
  * Manages the holograms for this plugin.
@@ -50,9 +51,13 @@ public class HologramManager extends eu.decentsoftware.holograms.api.holograms.H
      */
     public void createHologram(String hologramName, Location hologramLocation, HologramEnum type, Player player) {
         switch (type) {
-            case HologramEnum.PIGGY_BANK -> {
+            case PIGGY_BANK -> {
                 Hologram hologram = DHAPI.createHologram(hologramName, hologramLocation, true);
-                makePiggyBankHologram(hologram, player);
+                constructPiggyBankHologram(hologram, player);
+            }
+            case LATEST_DEATH -> {
+                Hologram hologram = DHAPI.createHologram(hologramName, hologramLocation, true);
+                constructLatestDeathHologram(hologram, player);
             }
             default ->
                     player.sendMessage(Component.text("Unknown hologram type!", NamedTextColor.RED, TextDecoration.BOLD));
@@ -81,6 +86,20 @@ public class HologramManager extends eu.decentsoftware.holograms.api.holograms.H
                     e.printStackTrace();
                 }
             }
+            case LATEST_DEATH -> {
+                try {
+                    UUID deathPlayerUuid = getLatestDeathUuid();
+                    Player deathPlayer = plugin.getServer().getPlayer(deathPlayerUuid);
+                    String deathHologramText = plugin.getConfig().getString("holograms.latest-death", "Latest death:");
+
+                    DHAPI.setHologramLine(hologram, 0, "&4&l&n" + deathHologramText);
+                    DHAPI.setHologramLine(hologram, 1, deathPlayer.getName());
+                    DHAPI.setHologramLine(hologram, 2, "#HEAD: PLAYER_HEAD (" + deathPlayer.getName() + ")");
+                } catch (SQLException e) {
+                    plugin.getLogger().severe("Failed to update latest death hologram!");
+                    e.printStackTrace();
+                }
+            }
             default -> plugin.getLogger().severe("Unknown hologram type!");
         }
     }
@@ -91,7 +110,7 @@ public class HologramManager extends eu.decentsoftware.holograms.api.holograms.H
      * @param hologram The hologram instance to fill.
      * @param player   The player trying to create the hologram.
      */
-    private void makePiggyBankHologram(Hologram hologram, Player player) {
+    private void constructPiggyBankHologram(Hologram hologram, Player player) {
         double piggyBankAmount = 0;
         try {
             piggyBankAmount = getPiggyBankTotal();
@@ -100,13 +119,50 @@ public class HologramManager extends eu.decentsoftware.holograms.api.holograms.H
             e.printStackTrace();
 
             player.sendMessage(Component.text("Internal database error.", NamedTextColor.RED, TextDecoration.BOLD));
+            return;
         }
 
-        String piggyBankName = plugin.getConfig().getString("piggy-bank-name", "Piggy bank");
+        String piggyBankName = plugin.getConfig().getString("holograms.piggy-bank-name", "Piggy bank");
 
         DHAPI.addHologramLine(hologram, "&u&l&n" + piggyBankName);
         DHAPI.addHologramLine(hologram, "€" + piggyBankAmount);
         DHAPI.addHologramLine(hologram, "#ENTITY: PIG");
+
+        this.registerHologram(hologram);
+    }
+
+    /**
+     * Fill given hologram for latest death hologram
+     *
+     * @param hologram The hologram to be filled
+     * @param player   The player trying to create the hologram
+     */
+    private void constructLatestDeathHologram(Hologram hologram, Player player) {
+        UUID latestDeathPlayerUuid;
+        try {
+            latestDeathPlayerUuid = getLatestDeathUuid();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to get latest death UUID!");
+            e.printStackTrace();
+
+            player.sendMessage(Component.text("Internal database error.", NamedTextColor.RED, TextDecoration.BOLD));
+            return;
+        }
+
+        if (latestDeathPlayerUuid != null) {
+            String latestDeathHologramText = plugin.getConfig().getString("holograms.latest-death", "Latest death:");
+            Player latestDeathPlayer = plugin.getServer().getPlayer(latestDeathPlayerUuid);
+
+            DHAPI.addHologramLine(hologram, "&4&l&n" + latestDeathHologramText);
+            DHAPI.addHologramLine(hologram, latestDeathPlayer.getName());
+            DHAPI.addHologramLine(hologram, "#HEAD: PLAYER_HEAD (" + latestDeathPlayer.getName() + ")");
+        } else {
+            String noLatestDeathText = plugin.getConfig().getString("holograms.no-latest-death", "No deaths yet!");
+
+            DHAPI.addHologramLine(hologram, "&4&l&n" + noLatestDeathText);
+            DHAPI.addHologramLine(hologram, "");
+            DHAPI.addHologramLine(hologram, "");
+        }
 
         this.registerHologram(hologram);
     }
@@ -129,5 +185,26 @@ public class HologramManager extends eu.decentsoftware.holograms.api.holograms.H
             }
         }
         return 0;
+    }
+
+    /**
+     * Get the player UUID of the latest death
+     *
+     * @return A player UUID
+     * @throws SQLException If a database error occurs
+     */
+    private UUID getLatestDeathUuid() throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT (player_uuid) FROM deaths
+                ORDER BY datetime(created_at) DESC
+                LIMIT 1
+                """)) {
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                return UUID.fromString(resultSet.getString("player_uuid"));
+            }
+        }
+        return null;
     }
 }

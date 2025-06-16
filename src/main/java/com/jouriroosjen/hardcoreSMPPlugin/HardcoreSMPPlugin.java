@@ -68,7 +68,6 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         playtimeManager = new PlaytimeManager(this, databaseManager.connection);
 
         // Register event listeners
-        getServer().getPluginManager().registerEvents(new PlayerDeathListener(this, databaseManager.connection), this);
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(this, databaseManager.connection, playtimeManager), this);
         getServer().getPluginManager().registerEvents(new PlayerKickListener(playtimeManager), this);
         getServer().getPluginManager().registerEvents(new PlayerQuitListener(playtimeManager), this);
@@ -119,6 +118,9 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
     private void initHologramFeatures() {
         // Setup hologram manager
         hologramManager = new HologramManager(DecentHologramsAPI.get(), this, databaseManager.connection);
+
+        // Register event listeners
+        getServer().getPluginManager().registerEvents(new PlayerDeathListener(this, databaseManager.connection, hologramManager), this);
 
         // Register commands
         getCommand("confirm").setExecutor(new ConfirmCommand(this, databaseManager.connection, buybackManager, hologramManager));

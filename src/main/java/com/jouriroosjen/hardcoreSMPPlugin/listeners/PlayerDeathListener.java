@@ -1,5 +1,7 @@
 package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 
+import com.jouriroosjen.hardcoreSMPPlugin.enums.HologramEnum;
+import com.jouriroosjen.hardcoreSMPPlugin.managers.HologramManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -27,16 +29,19 @@ import java.util.UUID;
 public class PlayerDeathListener implements Listener {
     private final JavaPlugin plugin;
     private final Connection connection;
+    private final HologramManager hologramManager;
 
     /**
      * Constructs a new {@code PlayerDeathListener} instance.
      *
-     * @param plugin     The main plugin instance
-     * @param connection The active database connection
+     * @param plugin          The main plugin instance
+     * @param connection      The active database connection
+     * @param hologramManager The hologram manager instance
      */
-    public PlayerDeathListener(JavaPlugin plugin, Connection connection) {
+    public PlayerDeathListener(JavaPlugin plugin, Connection connection, HologramManager hologramManager) {
         this.plugin = plugin;
         this.connection = connection;
+        this.hologramManager = hologramManager;
     }
 
     /**
@@ -136,6 +141,8 @@ public class PlayerDeathListener implements Listener {
             plugin.getLogger().severe("[DATABASE] Failed to update alive status of player " + player.getName());
             e.printStackTrace();
         }
+
+        hologramManager.updateHologram(HologramEnum.LATEST_DEATH);
     }
 
     /**
