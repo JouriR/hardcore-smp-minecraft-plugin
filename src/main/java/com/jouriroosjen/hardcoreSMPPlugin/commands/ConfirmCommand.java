@@ -42,7 +42,7 @@ public class ConfirmCommand implements CommandExecutor {
      * @param givingPlayer The players who's giving the assist
      * @param amount       The assisted amount
      */
-    private record BuybackAssist(UUID givingPlayer, double amount) {
+    public record BuybackAssist(UUID givingPlayer, double amount) {
     }
 
     /**
@@ -123,7 +123,7 @@ public class ConfirmCommand implements CommandExecutor {
 
         try {
             // Calculate assist amount and check if that amount is still available.
-            double assistAmount = calculateAssistAmount(buyback.target(), buyback.percentage().getAsInt(), buybackAmount);
+            double assistAmount = calculateAssistAmount(buyback.percentage().getAsInt(), buybackAmount);
 
             // Get corresponding death and check if assist amount is still available.
             OptionalInt correspondingDeathId = getLatestDeath(buyback.target());
@@ -217,12 +217,11 @@ public class ConfirmCommand implements CommandExecutor {
     /**
      * Calculate the amount to assist based on the percentage.
      *
-     * @param targetUuid       The target's UUID
      * @param assistPercentage The percentage to assist the buyback with.
      * @param buybackAmount    The price of the buyback
      * @return The amount that is being assisted.
      */
-    private double calculateAssistAmount(UUID targetUuid, int assistPercentage, int buybackAmount) {
+    private double calculateAssistAmount(int assistPercentage, int buybackAmount) {
         return buybackAmount * (assistPercentage / 100.0);
     }
 

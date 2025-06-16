@@ -17,6 +17,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.OptionalInt;
 import java.util.UUID;
 
@@ -89,8 +91,9 @@ public class BuyBackCommand implements CommandExecutor {
 
             // Create pending confirmation
             buybackManager.addPending(player.getUniqueId(), player.getUniqueId(), null);
+            double price = calculatePrice(player, player.getUniqueId(), null);
             player.sendMessage(
-                    Component.text("Klik hier om je buyback te bevestigen! (Of gebruik /confirm)")
+                    Component.text("Deze buyback kost €" + price + " - Klik om te bevestigen! (Of gebruik /confirm)")
                             .color(NamedTextColor.YELLOW)
                             .decorate(TextDecoration.BOLD)
                             .decorate(TextDecoration.UNDERLINED)
@@ -162,8 +165,9 @@ public class BuyBackCommand implements CommandExecutor {
 
         // Create pending confirmation
         buybackManager.addPending(player.getUniqueId(), targetPlayer.getUniqueId(), OptionalInt.of(percentage));
+        double price = calculatePrice(player, targetPlayer.getUniqueId(), OptionalInt.of(percentage));
         player.sendMessage(
-                Component.text("Klik hier om je buyback assist te bevestigen! (Of gebruik /confirm)")
+                Component.text("Deze assist kost €" + price + " - Klik om te bevestigen! (Of gebruik /confirm)")
                         .color(NamedTextColor.YELLOW)
                         .decorate(TextDecoration.BOLD)
                         .decorate(TextDecoration.UNDERLINED)
@@ -171,6 +175,33 @@ public class BuyBackCommand implements CommandExecutor {
         );
 
         return true;
+    }
+
+    /**
+     * Calculate the price to be paid
+     *
+     * @param sender     The player using the command
+     * @param playerUuid The target player
+     * @param percentage The percentage to help with
+     * @return The price or the buyback/assist
+     */
+    private double calculatePrice(Player sender, UUID playerUuid, OptionalInt percentage) {
+        try {
+            OptionalInt correspondingDeathId = getLatestDeath(playerUuid);
+            List<ConfirmCommand.BuybackAssist> allAssists = getAllAssists(correspondingDeathId.getAsInt());
+            double totalAssistedAmount = getTotalAssistedAmount(allAssists);
+            int buybackPrice = getBuybackPrice(playerUuid);
+
+            if (percentage == null) return buybackPrice - totalAssistedAmount;
+
+            return calculateAssistAmount(percentage.getAsInt(), buybackPrice);
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed calculating buyback price for " + playerUuid.toString() + "!");
+            e.printStackTrace();
+
+            sender.sendMessage(Component.text("Internal database error.", NamedTextColor.RED));
+            return 0;
+        }
     }
 
     /**
@@ -188,5 +219,108 @@ public class BuyBackCommand implements CommandExecutor {
                 return resultSet.next() && resultSet.getInt("is_alive") == 0;
             }
         }
+    }
+
+    /**
+     * Get the current buyback price for the given player.
+     *
+     * @param playerUuid The player's UUID
+     * @return The buyback price
+     * @throws SQLException If a database error occurs
+     */
+    private int getBuybackPrice(UUID playerUuid) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                        SELECT (has_grace)
+                        FROM players
+                        WHERE uuid = ?
+                """)) {
+            statement.setString(1, playerUuid.toString());
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next() && resultSet.getBoolean("has_grace")) {
+                    return plugin.getConfig().getInt("piggy-bank-amounts.grace-period-death", 5);
+                }
+            }
+        }
+
+        return plugin.getConfig().getInt("piggy-bank-amounts.normal-death", 10);
+    }
+
+    /**
+     * Get the ID of the player's last death.
+     *
+     * @param playerUuid The player of which the death ID should be.
+     * @return An optional filled with the deathId if found, otherwise empty.
+     * @throws SQLException If a database error occurs.
+     */
+    private OptionalInt getLatestDeath(UUID playerUuid) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT (id) FROM deaths
+                WHERE player_uuid = ?
+                ORDER BY datetime(created_at) DESC
+                LIMIT 1
+                """)) {
+            statement.setString(1, playerUuid.toString());
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return OptionalInt.of(resultSet.getInt("id"));
+                }
+            }
+        }
+        return OptionalInt.empty();
+    }
+
+    /**
+     * Gets all assists for a given death
+     *
+     * @param deathId The corresponding deathId.
+     * @return A list containing all the assists.
+     * @throws SQLException If a database error occurs.
+     */
+    private List<ConfirmCommand.BuybackAssist> getAllAssists(int deathId) throws SQLException {
+        List<ConfirmCommand.BuybackAssist> assists = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT giving_player_uuid, amount
+                FROM buyback_assists
+                WHERE receiving_player_death_id = ?
+                """)) {
+            statement.setInt(1, deathId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    UUID givingPlayer = UUID.fromString(resultSet.getString("giving_player_uuid"));
+                    double amount = resultSet.getDouble("amount");
+
+                    assists.add(new ConfirmCommand.BuybackAssist(givingPlayer, amount));
+                }
+            }
+        }
+        return assists;
+    }
+
+    /**
+     * Get total assisted amount of the given assists list.
+     *
+     * @param assists A list containing all the assists to count up.
+     * @return The total assisted amount.
+     */
+    private double getTotalAssistedAmount(List<ConfirmCommand.BuybackAssist> assists) {
+        double total = 0;
+        for (ConfirmCommand.BuybackAssist assist : assists) {
+            total += assist.amount();
+        }
+        return total;
+    }
+
+    /**
+     * Calculate the amount to assist based on the percentage.
+     *
+     * @param assistPercentage The percentage to assist the buyback with.
+     * @param buybackAmount    The price of the buyback
+     * @return The amount that is being assisted.
+     */
+    private double calculateAssistAmount(int assistPercentage, int buybackAmount) {
+        return buybackAmount * (assistPercentage / 100.0);
     }
 }
