@@ -28,10 +28,20 @@ public enum PlayerStatisticsEnum {
 
     private final int id;
 
+    /**
+     * Constructs a new {@code PlayerStatisticsEnum} instance.
+     *
+     * @param id
+     */
     PlayerStatisticsEnum(int id) {
         this.id = id;
     }
 
+    /**
+     * Get the corresponding ID of a value.
+     *
+     * @return The ID of this value.
+     */
     public int getId() {
         return id;
     }

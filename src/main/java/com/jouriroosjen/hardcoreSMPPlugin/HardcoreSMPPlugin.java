@@ -9,6 +9,7 @@ import com.jouriroosjen.hardcoreSMPPlugin.listeners.PlayerKickListener;
 import com.jouriroosjen.hardcoreSMPPlugin.listeners.PlayerQuitListener;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.BuybackManager;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.HologramManager;
+import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlaytimeManager;
 import eu.decentsoftware.holograms.api.DecentHologramsAPI;
 import org.bukkit.Bukkit;
@@ -34,6 +35,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
     private DatabaseManager databaseManager;
     private BuybackManager buybackManager;
     private HologramManager hologramManager;
+    private PlayerStatisticsManager playerStatisticsManager;
     private PlaytimeManager playtimeManager;
 
     /**
@@ -65,6 +67,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
 
         // Setup managers
         buybackManager = new BuybackManager(this);
+        playerStatisticsManager = new PlayerStatisticsManager(this, databaseManager.connection);
         playtimeManager = new PlaytimeManager(this, databaseManager.connection);
 
         // Register event listeners
