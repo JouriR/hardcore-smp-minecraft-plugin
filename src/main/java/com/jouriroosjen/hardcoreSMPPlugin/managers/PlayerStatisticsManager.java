@@ -42,7 +42,8 @@ public class PlayerStatisticsManager {
                 VALUES (?, ?, ?)
                 ON CONFLICT (player_uuid, statistic_type)
                 DO UPDATE SET
-                    value = value + ?
+                    value = value + ?,
+                    updated_at = datetime('now')
                 """)) {
             statement.setString(1, playerUuid.toString());
             statement.setInt(2, playerStatistic.getId());
