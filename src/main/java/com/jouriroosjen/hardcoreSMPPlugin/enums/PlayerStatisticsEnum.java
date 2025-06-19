@@ -24,7 +24,10 @@ public enum PlayerStatisticsEnum {
     ADVANCEMENTS_DONE(21),
     ENDERMAN_ATTACKS(22),
     TOTAL_EXPERIENCE_GAINED(23),
-    POTATOES_HARVESTED(24);
+    POTATOES_HARVESTED(24),
+    FISH_HOOK_IN_GROUND(25),
+    FISHING_FAILED(26),
+    FISH_HOOK_IN_PLAYER(27);
 
     private final int id;
 

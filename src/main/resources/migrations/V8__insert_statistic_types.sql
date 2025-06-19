@@ -22,4 +22,7 @@ VALUES ('fish_caught'),
        ('advancements_done'),
        ('enderman_attacks'),
        ('total_experience_gained'),
-       ('potatoes_harvested');
+       ('potatoes_harvested'),
+       ('fish_hook_in_ground'),
+       ('fishing_failed'),
+       ('fish_hook_in_player');

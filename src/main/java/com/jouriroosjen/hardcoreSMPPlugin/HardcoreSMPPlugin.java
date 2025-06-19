@@ -3,10 +3,7 @@ package com.jouriroosjen.hardcoreSMPPlugin;
 import com.jouriroosjen.hardcoreSMPPlugin.commands.*;
 import com.jouriroosjen.hardcoreSMPPlugin.database.DatabaseManager;
 import com.jouriroosjen.hardcoreSMPPlugin.database.MigrationsManager;
-import com.jouriroosjen.hardcoreSMPPlugin.listeners.PlayerDeathListener;
-import com.jouriroosjen.hardcoreSMPPlugin.listeners.PlayerJoinListener;
-import com.jouriroosjen.hardcoreSMPPlugin.listeners.PlayerKickListener;
-import com.jouriroosjen.hardcoreSMPPlugin.listeners.PlayerQuitListener;
+import com.jouriroosjen.hardcoreSMPPlugin.listeners.*;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.BuybackManager;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.HologramManager;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
@@ -71,6 +68,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         playtimeManager = new PlaytimeManager(this, databaseManager.connection);
 
         // Register event listeners
+        getServer().getPluginManager().registerEvents(new PlayerFishListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(this, databaseManager.connection, playtimeManager), this);
         getServer().getPluginManager().registerEvents(new PlayerKickListener(playtimeManager), this);
         getServer().getPluginManager().registerEvents(new PlayerQuitListener(playtimeManager), this);
