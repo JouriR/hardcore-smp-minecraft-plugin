@@ -8,13 +8,29 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerFishEvent;
 
+/**
+ * Handles player fish events.
+ *
+ * @author Jouri Roosjen
+ * @version 1.0.0
+ */
 public class PlayerFishListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
 
+    /**
+     * Construct a new {@code PlayerFishListener} instance.
+     *
+     * @param playerStatisticsManager The {@code playerStatisticsManager} instance.
+     */
     public PlayerFishListener(PlayerStatisticsManager playerStatisticsManager) {
         this.playerStatisticsManager = playerStatisticsManager;
     }
 
+    /**
+     * Event handler for player fish event.
+     *
+     * @param event The player fish event.
+     */
     @EventHandler
     public void onPlayerFish(PlayerFishEvent event) {
         Player player = event.getPlayer();
