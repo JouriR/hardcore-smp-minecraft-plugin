@@ -17,7 +17,7 @@ public class PlayerItemDamageListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
 
     /**
-     * Constructs a ne {@code PlayerItemDamageListener} instance.
+     * Constructs a new {@code PlayerItemDamageListener} instance.
      *
      * @param playerStatisticsManager The {@code playerStatisticsManager} instance.
      */
