@@ -27,7 +27,8 @@ public enum PlayerStatisticsEnum {
     POTATOES_HARVESTED(24),
     FISH_HOOK_IN_GROUND(25),
     FISHING_FAILED(26),
-    FISH_HOOK_IN_PLAYER(27);
+    FISH_HOOK_IN_PLAYER(27),
+    TOTAL_DAMAGE_RECEIVED(28);
 
     private final int id;
 

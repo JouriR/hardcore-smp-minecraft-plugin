@@ -25,4 +25,5 @@ VALUES ('fish_caught'),
        ('potatoes_harvested'),
        ('fish_hook_in_ground'),
        ('fishing_failed'),
-       ('fish_hook_in_player');
+       ('fish_hook_in_player'),
+       ('total_damage_received');
