@@ -26,4 +26,5 @@ VALUES ('fish_caught'),
        ('fish_hook_in_ground'),
        ('fishing_failed'),
        ('fish_hook_in_player'),
-       ('total_damage_received');
+       ('total_damage_received'),
+       ('pufferfish_caught');

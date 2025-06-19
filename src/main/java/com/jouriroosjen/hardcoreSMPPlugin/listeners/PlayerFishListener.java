@@ -2,7 +2,9 @@ package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 
 import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
+import org.bukkit.Material;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -35,9 +37,27 @@ public class PlayerFishListener implements Listener {
     public void onPlayerFish(PlayerFishEvent event) {
         Player player = event.getPlayer();
 
-        // Update statistic when player has caught a fish
+        // Update statistic when player has caught a fish (or lilly pad)
         if (event.getState() == PlayerFishEvent.State.CAUGHT_FISH) {
-            playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.FISH_CAUGHT, 1);
+            Item itemCaught = (Item) event.getCaught();
+            Material itemMaterial = itemCaught.getItemStack().getType();
+
+            switch (itemMaterial) {
+                case LILY_PAD:
+                    playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.LILLY_PAD_CAUGHT, 1);
+                    break;
+
+                case PUFFERFISH:
+                    playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.PUFFERFISH_CAUGHT, 1);
+                    break;
+
+                case COD, SALMON, TROPICAL_FISH:
+                    playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.FISH_CAUGHT, 1);
+                    break;
+
+                default:
+                    break;
+            }
         }
 
         // Update statistic when player has caught the ground
