@@ -20,12 +20,16 @@ repositories {
         name = "jitpack"
         url = "https://jitpack.io/"
     }
+    maven {
+        url = "https://nexus.scarsz.me/content/groups/public/"
+    }
 }
 
 dependencies {
     compileOnly(
             "io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT",
-            "com.github.decentsoftware-eu:decentholograms:2.8.17"
+            "com.github.decentsoftware-eu:decentholograms:2.8.17",
+            "com.discordsrv:discordsrv:1.29.0"
     )
 }
 

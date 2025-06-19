@@ -11,6 +11,9 @@ dependencies:
     DecentHolograms:
       load: BEFORE
       required: true
+    DiscordSRV:
+      load: BEFORE
+      required: true
 commands:
   buyback:
     description: "Buy yourself or another player back!"
