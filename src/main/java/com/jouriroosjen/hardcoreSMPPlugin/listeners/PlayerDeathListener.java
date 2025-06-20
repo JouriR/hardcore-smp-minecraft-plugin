@@ -2,6 +2,7 @@ package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 
 import com.jouriroosjen.hardcoreSMPPlugin.enums.HologramEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.HologramManager;
+import com.jouriroosjen.hardcoreSMPPlugin.utils.ImageUtils;
 import com.jouriroosjen.hardcoreSMPPlugin.utils.PlayerAvatarUtil;
 import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.dependencies.jda.api.EmbedBuilder;
@@ -19,6 +20,11 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -155,13 +161,33 @@ public class PlayerDeathListener implements Listener {
             plugin.getLogger().warning("DiscordSRV: channel not found!");
             return;
         }
-        
-        EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle(player.getName() + " " + deathMessage);
-        embed.setImage(PlayerAvatarUtil.getPlayerAvatarUrl(player));
-        embed.setColor(java.awt.Color.RED);
 
-        discordChannel.sendMessageEmbeds(embed.build()).queue();
+        try {
+            // Get avatar image and apply filters
+            BufferedImage originalAvatar = ImageIO.read(new URL(PlayerAvatarUtil.getPlayerAvatarUrl(player, 500)));
+            BufferedImage processedAvatar = ImageUtils.toGrayscale(originalAvatar);
+            ImageUtils.drawRedCross(processedAvatar);
+            ImageUtils.drawDeathText(processedAvatar, player.getName(), deathMessage, plugin.getResource("fonts/MinecraftBold.otf"));
+
+            // Convert the image to a byte array in memory
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(processedAvatar, "png", baos);
+            byte[] imageBytes = baos.toByteArray();
+
+            // Build embed
+            EmbedBuilder embed = new EmbedBuilder();
+            embed.setTitle(player.getName() + " " + deathMessage);
+            embed.setImage("attachment://avatar.png");
+            embed.setColor(java.awt.Color.RED);
+
+            // Send embed with attached avatar image
+            discordChannel.sendMessageEmbeds(embed.build())
+                    .addFile(new ByteArrayInputStream(imageBytes), "avatar.png")
+                    .queue();
+        } catch (Exception e) {
+            plugin.getLogger().severe("Failed to send death embed of player " + player.getName());
+            e.printStackTrace();
+        }
     }
 
     /**

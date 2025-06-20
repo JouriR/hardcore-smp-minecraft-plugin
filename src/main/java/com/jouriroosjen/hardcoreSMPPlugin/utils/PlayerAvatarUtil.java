@@ -19,14 +19,15 @@ public class PlayerAvatarUtil {
     /**
      * Get the avatar url of the given player.
      *
-     * @param player The player
+     * @param player    The player
+     * @param imageSize The size of the image
      * @return A url to the player's avatar
      */
-    public static String getPlayerAvatarUrl(Player player) {
+    public static String getPlayerAvatarUrl(Player player, int imageSize) {
         boolean isFloodgatePlayer = FloodgateApi.getInstance().isFloodgatePlayer(player.getUniqueId());
 
         // Return Minotar url if the player is not on Bedrock
-        if (!isFloodgatePlayer) return "https://minotar.net/helm/" + player.getName() + "/150.png";
+        if (!isFloodgatePlayer) return "https://minotar.net/helm/" + player.getName() + "/" + imageSize + ".png";
 
         // Create request to fetch bedrock player texture
         String bedrockXuid = FloodgateApi.getInstance().getPlayer(player.getUniqueId()).getXuid();
@@ -40,7 +41,7 @@ public class PlayerAvatarUtil {
 
                 // Return bedrock player head based on texture
                 return texture != null
-                        ? "https://mc-heads.net/avatar/" + texture + "/150.png"
+                        ? "https://mc-heads.net/avatar/" + texture + "/" + imageSize + ".png"
                         : null;
             }
         } catch (Exception e) {
@@ -49,6 +50,6 @@ public class PlayerAvatarUtil {
         }
 
         // Return steve head as fallback
-        return "https://minotar.net/helm/Steve/150.png";
+        return "https://minotar.net/helm/Steve/" + imageSize + ".png";
     }
 }
