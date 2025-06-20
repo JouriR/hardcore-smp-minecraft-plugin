@@ -31,18 +31,17 @@ public class PlayerAvatarUtil {
 
         // Create request to fetch bedrock player texture
         String bedrockXuid = FloodgateApi.getInstance().getPlayer(player.getUniqueId()).getXuid();
+
         String requestUrl = "https://api.geysermc.org/v2/skin/" + bedrockXuid;
         Request request = new Request.Builder().url(requestUrl).build();
 
         try (Response response = HTTP.newCall(request).execute()) {
             if (response.isSuccessful() && response.body() != null) {
                 JSONObject jsonResponse = new JSONObject(response.body().string());
-                String texture = jsonResponse.optString("textureId", null);
+                String texture = jsonResponse.optString("texture_id", null);
 
                 // Return bedrock player head based on texture
-                return texture != null
-                        ? "https://mc-heads.net/avatar/" + texture + "/" + imageSize + ".png"
-                        : null;
+                if (texture != null) return "https://mc-heads.net/avatar/" + texture + "/" + imageSize + ".png";
             }
         } catch (Exception e) {
             System.out.println("Failed to fetch floodgate avatar for " + player.getName());
