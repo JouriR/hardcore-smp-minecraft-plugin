@@ -23,13 +23,17 @@ repositories {
     maven {
         url = "https://nexus.scarsz.me/content/groups/public/"
     }
+    maven {
+        url = uri("https://repo.opencollab.dev/main/")
+    }
 }
 
 dependencies {
     compileOnly(
             "io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT",
             "com.github.decentsoftware-eu:decentholograms:2.8.17",
-            "com.discordsrv:discordsrv:1.29.0"
+            "com.discordsrv:discordsrv:1.29.0",
+            "org.geysermc.floodgate:api:2.2.4-SNAPSHOT"
     )
 }
 

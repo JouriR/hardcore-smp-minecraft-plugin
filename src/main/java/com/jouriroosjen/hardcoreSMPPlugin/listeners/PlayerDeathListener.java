@@ -2,6 +2,7 @@ package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 
 import com.jouriroosjen.hardcoreSMPPlugin.enums.HologramEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.HologramManager;
+import com.jouriroosjen.hardcoreSMPPlugin.utils.PlayerAvatarUtil;
 import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.dependencies.jda.api.EmbedBuilder;
 import github.scarsz.discordsrv.dependencies.jda.api.entities.TextChannel;
@@ -154,12 +155,10 @@ public class PlayerDeathListener implements Listener {
             plugin.getLogger().warning("DiscordSRV: channel not found!");
             return;
         }
-
-        System.out.println(DiscordSRV.getAvatarUrl(player));
-
+        
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle(player.getName() + " " + deathMessage);
-        embed.setImage("https://minotar.net/helm/" + player.getName() + "/100.png");
+        embed.setImage(PlayerAvatarUtil.getPlayerAvatarUrl(player));
         embed.setColor(java.awt.Color.RED);
 
         discordChannel.sendMessageEmbeds(embed.build()).queue();
