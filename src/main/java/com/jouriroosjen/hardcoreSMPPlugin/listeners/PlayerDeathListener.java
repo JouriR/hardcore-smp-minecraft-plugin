@@ -5,7 +5,6 @@ import com.jouriroosjen.hardcoreSMPPlugin.managers.HologramManager;
 import com.jouriroosjen.hardcoreSMPPlugin.utils.ImageUtils;
 import com.jouriroosjen.hardcoreSMPPlugin.utils.PlayerAvatarUtil;
 import github.scarsz.discordsrv.DiscordSRV;
-import github.scarsz.discordsrv.dependencies.jda.api.EmbedBuilder;
 import github.scarsz.discordsrv.dependencies.jda.api.entities.TextChannel;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -174,14 +173,8 @@ public class PlayerDeathListener implements Listener {
             ImageIO.write(processedAvatar, "png", baos);
             byte[] imageBytes = baos.toByteArray();
 
-            // Build embed
-            EmbedBuilder embed = new EmbedBuilder();
-            embed.setTitle(player.getName() + " " + deathMessage);
-            embed.setImage("attachment://avatar.png");
-            embed.setColor(java.awt.Color.RED);
-
-            // Send embed with attached avatar image
-            discordChannel.sendMessageEmbeds(embed.build())
+            // Send message with attached avatar image
+            discordChannel.sendMessage("||@everyone||")
                     .addFile(new ByteArrayInputStream(imageBytes), "avatar.png")
                     .queue();
         } catch (Exception e) {
