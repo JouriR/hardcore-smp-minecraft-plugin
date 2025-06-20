@@ -3,6 +3,10 @@ package com.jouriroosjen.hardcoreSMPPlugin.commands;
 import com.jouriroosjen.hardcoreSMPPlugin.enums.HologramEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.BuybackManager;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.HologramManager;
+import com.jouriroosjen.hardcoreSMPPlugin.utils.PlayerAvatarUtil;
+import github.scarsz.discordsrv.DiscordSRV;
+import github.scarsz.discordsrv.dependencies.jda.api.EmbedBuilder;
+import github.scarsz.discordsrv.dependencies.jda.api.entities.User;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -15,6 +19,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
+import java.awt.*;
+import java.awt.Color;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -148,6 +154,40 @@ public class ConfirmCommand implements CommandExecutor {
                     .build();
             player.sendMessage(messageComponent);
             player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
+
+            // Get the target player
+            Player targetPlayer = plugin.getServer().getPlayer(buyback.target());
+            if (targetPlayer != null) {
+                String assistReceivedMessage = plugin.getConfig().getString("messages.assist-received", "You've received a %%percentage% assist from %player%!")
+                        .replace("%player%", player.getName())
+                        .replace("%percentage%", String.valueOf(buyback.percentage().getAsInt()));
+
+                // Send message in-game if target is online
+                if (targetPlayer.isOnline()) {
+                    TextComponent receivedMessageComponent = Component.text()
+                            .content(assistReceivedMessage)
+                            .color(NamedTextColor.AQUA)
+                            .decorate(TextDecoration.BOLD)
+                            .build();
+                    targetPlayer.sendMessage(receivedMessageComponent);
+                    targetPlayer.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
+                }
+
+                // Send message via Discord if player is offline
+                if (!targetPlayer.isOnline()) {
+                    String targetDiscordId = DiscordSRV.getPlugin().getAccountLinkManager().getDiscordId(targetPlayer.getUniqueId());
+                    User targetDiscordUser = DiscordSRV.getPlugin().getJda().getUserById(targetDiscordId);
+
+                    EmbedBuilder embed = new EmbedBuilder();
+                    embed.setThumbnail(PlayerAvatarUtil.getPlayerAvatarUrl(player, 50));
+                    embed.setDescription(assistReceivedMessage);
+                    embed.setColor(Color.CYAN);
+
+                    targetDiscordUser.openPrivateChannel()
+                            .flatMap(channel -> channel.sendMessageEmbeds(embed.build()))
+                            .queue();
+                }
+            }
         } catch (SQLException e) {
             plugin.getLogger().severe("Failed creating buyback assist!");
             e.printStackTrace();

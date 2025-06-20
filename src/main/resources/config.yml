@@ -9,6 +9,7 @@ messages:
   not-dead-error: "Je bent niet dood, knurft..."
   assist-not-dead-error: "is niet dood, knurft..."
   assist-created: "Jouw hulp is gewaardeerd! 🔥"
+  assist-received: "%player% heeft jou een assist gegeven van %%percentage% voor je volgende buyback!"
   buy-back-success: "Je bent terug gebracht!"
   penalty-given: "Speler %player% heeft een penalty van %amount% gekregen voor: %reason%!"
   grace-over: "%player% wordt niet langer beschermt en betaald nu de volle mep!"
