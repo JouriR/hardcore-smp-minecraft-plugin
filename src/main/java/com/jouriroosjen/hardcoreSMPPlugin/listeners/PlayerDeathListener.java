@@ -163,7 +163,7 @@ public class PlayerDeathListener implements Listener {
 
         try {
             // Get avatar image and apply filters
-            BufferedImage originalAvatar = ImageIO.read(new URL(PlayerAvatarUtil.getPlayerAvatarUrl(player, 500)));
+            BufferedImage originalAvatar = ImageIO.read(new URL(PlayerAvatarUtil.getPlayerAvatarUrl(player, 300)));
             BufferedImage processedAvatar = ImageUtils.toGrayscale(originalAvatar);
             ImageUtils.drawRedCross(processedAvatar);
             ImageUtils.drawDeathText(processedAvatar, player.getName(), deathMessage, plugin.getResource("fonts/MinecraftBold.otf"));
