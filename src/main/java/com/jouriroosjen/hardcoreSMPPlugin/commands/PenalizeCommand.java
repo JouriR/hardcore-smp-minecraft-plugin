@@ -2,6 +2,10 @@ package com.jouriroosjen.hardcoreSMPPlugin.commands;
 
 import com.jouriroosjen.hardcoreSMPPlugin.enums.HologramEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.HologramManager;
+import com.jouriroosjen.hardcoreSMPPlugin.utils.PlayerAvatarUtil;
+import github.scarsz.discordsrv.DiscordSRV;
+import github.scarsz.discordsrv.dependencies.jda.api.EmbedBuilder;
+import github.scarsz.discordsrv.dependencies.jda.api.entities.TextChannel;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -13,6 +17,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
+import java.awt.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -104,6 +109,26 @@ public class PenalizeCommand implements CommandExecutor {
             player.playSound(player, Sound.AMBIENT_CAVE, 2, 1);
         }
         plugin.getServer().broadcast(messageComponent);
+
+        // Get Discord channel
+        String discordChannelId = DiscordSRV.config().getString("Channels.announcements");
+        TextChannel discordChannel = DiscordSRV.getPlugin().getJda().getTextChannelById(discordChannelId);
+
+        if (discordChannel == null) {
+            plugin.getLogger().warning("DiscordSRV: channel not found!");
+            return true;
+        }
+
+        // Set up Discord embed message
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setTitle("Penalty Alert!");
+        embed.setDescription(penaltyMessage);
+        embed.setThumbnail(PlayerAvatarUtil.getPlayerAvatarUrl(targetPlayer, 50));
+        embed.setColor(Color.RED);
+
+        // Send Discord messages
+        discordChannel.sendMessage("||@everyone||").queue();
+        discordChannel.sendMessageEmbeds(embed.build()).queue();
 
         return true;
     }
