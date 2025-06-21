@@ -173,20 +173,18 @@ public class ConfirmCommand implements CommandExecutor {
                     targetPlayer.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
                 }
 
-                // Send message via Discord if player is offline
-                if (!targetPlayer.isOnline()) {
-                    String targetDiscordId = DiscordSRV.getPlugin().getAccountLinkManager().getDiscordId(targetPlayer.getUniqueId());
-                    User targetDiscordUser = DiscordSRV.getPlugin().getJda().getUserById(targetDiscordId);
+                // Send message via Discord as well
+                String targetDiscordId = DiscordSRV.getPlugin().getAccountLinkManager().getDiscordId(targetPlayer.getUniqueId());
+                User targetDiscordUser = DiscordSRV.getPlugin().getJda().getUserById(targetDiscordId);
 
-                    EmbedBuilder embed = new EmbedBuilder();
-                    embed.setThumbnail(PlayerAvatarUtil.getPlayerAvatarUrl(player, 50));
-                    embed.setDescription(assistReceivedMessage);
-                    embed.setColor(Color.CYAN);
+                EmbedBuilder embed = new EmbedBuilder();
+                embed.setThumbnail(PlayerAvatarUtil.getPlayerAvatarUrl(player, 50));
+                embed.setDescription(assistReceivedMessage);
+                embed.setColor(Color.CYAN);
 
-                    targetDiscordUser.openPrivateChannel()
-                            .flatMap(channel -> channel.sendMessageEmbeds(embed.build()))
-                            .queue();
-                }
+                targetDiscordUser.openPrivateChannel()
+                        .flatMap(channel -> channel.sendMessageEmbeds(embed.build()))
+                        .queue();
             }
         } catch (SQLException e) {
             plugin.getLogger().severe("Failed creating buyback assist!");
