@@ -158,7 +158,7 @@ public class ConfirmCommand implements CommandExecutor {
             // Get the target player
             Player targetPlayer = plugin.getServer().getPlayer(buyback.target());
             if (targetPlayer != null) {
-                String assistReceivedMessage = plugin.getConfig().getString("messages.assist-received", "You've received a %%percentage% assist from %player%!")
+                String assistReceivedMessage = plugin.getConfig().getString("messages.assist-received", "You've received a %percentage%% assist from %player%!")
                         .replace("%player%", player.getName())
                         .replace("%percentage%", String.valueOf(buyback.percentage().getAsInt()));
 
