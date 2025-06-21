@@ -153,7 +153,7 @@ public class PlayerDeathListener implements Listener {
 
         hologramManager.updateHologram(HologramEnum.LATEST_DEATH);
 
-        String discordChannelId = DiscordSRV.config().getString("Channels.global");
+        String discordChannelId = DiscordSRV.config().getString("Channels.deaths");
         TextChannel discordChannel = DiscordSRV.getPlugin().getJda().getTextChannelById(discordChannelId);
 
         if (discordChannel == null) {
