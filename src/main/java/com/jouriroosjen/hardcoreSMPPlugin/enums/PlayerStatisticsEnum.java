@@ -29,7 +29,8 @@ public enum PlayerStatisticsEnum {
     FISHING_FAILED(26),
     FISH_HOOK_IN_PLAYER(27),
     TOTAL_DAMAGE_RECEIVED(28),
-    PUFFERFISH_CAUGHT(29);
+    PUFFERFISH_CAUGHT(29),
+    CAKE_CONSUMED(30);
 
     private final int id;
 

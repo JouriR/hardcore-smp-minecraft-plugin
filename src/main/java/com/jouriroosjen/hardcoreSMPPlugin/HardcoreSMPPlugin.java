@@ -72,6 +72,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerEggThrowListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerExpChangeListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerFishListener(playerStatisticsManager), this);
+        getServer().getPluginManager().registerEvents(new PlayerInteractListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerItemConsumeListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerItemDamageListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(this, databaseManager.connection, playtimeManager), this);
