@@ -28,4 +28,6 @@ VALUES ('fish_caught'),
        ('fish_hook_in_player'),
        ('total_damage_received'),
        ('pufferfish_caught'),
-       ('cake_consumed');
+       ('cake_consumed'),
+       ('chorus_fruit_consumed'),
+       ('end_gateway_used');
