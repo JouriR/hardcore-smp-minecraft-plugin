@@ -72,3 +72,7 @@ processResources {
         expand props
     }
 }
+
+jar {
+    archiveFileName.set('HardcoreSMPPlugin.jar')
+}
