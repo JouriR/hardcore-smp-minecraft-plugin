@@ -4,6 +4,9 @@ on:
   push:
     tags: [ 'v*.*.*' ]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -29,3 +32,5 @@ jobs:
           name: ${{ github.ref_name }}
           generate_release_notes: true
           files: build/libs/HardcoreSMPPlugin.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
