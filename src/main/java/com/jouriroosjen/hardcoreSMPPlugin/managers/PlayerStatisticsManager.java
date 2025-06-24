@@ -36,7 +36,7 @@ public class PlayerStatisticsManager {
      * @param playerStatistic The statistic to update.
      * @param incrementValue  The value of which to increment the statistic with.
      */
-    public void incrementStatistic(UUID playerUuid, PlayerStatisticsEnum playerStatistic, int incrementValue) {
+    public void incrementStatistic(UUID playerUuid, PlayerStatisticsEnum playerStatistic, double incrementValue) {
         try (PreparedStatement statement = connection.prepareStatement("""
                 INSERT INTO player_statistics (player_uuid, statistic_type, value)
                 VALUES (?, ?, ?)
@@ -47,8 +47,8 @@ public class PlayerStatisticsManager {
                 """)) {
             statement.setString(1, playerUuid.toString());
             statement.setInt(2, playerStatistic.getId());
-            statement.setInt(3, incrementValue);
-            statement.setInt(4, incrementValue);
+            statement.setDouble(3, incrementValue);
+            statement.setDouble(4, incrementValue);
             statement.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().severe(

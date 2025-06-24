@@ -32,7 +32,8 @@ public enum PlayerStatisticsEnum {
     PUFFERFISH_CAUGHT(29),
     CAKE_CONSUMED(30),
     CHORUS_FRUIT_CONSUMED(31),
-    END_GATEWAY_USED(32);
+    END_GATEWAY_USED(32),
+    TOTAL_DAMAGE_GIVEN(33);
 
     private final int id;
 

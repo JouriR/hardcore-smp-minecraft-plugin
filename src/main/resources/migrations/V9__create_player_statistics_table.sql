@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS player_statistics
     id             INTEGER PRIMARY KEY            NOT NULL,
     player_uuid    TEXT                           NOT NULL,
     statistic_type INTEGER                        NOT NULL,
-    value          INTEGER                        NOT NULL,
+    value          REAL                           NOT NULL,
     created_at     TEXT DEFAULT (datetime('now')) NOT NULL,
     updated_at     TEXT DEFAULT (datetime('now')) NOT NULL,
 

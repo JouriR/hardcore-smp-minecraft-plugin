@@ -30,4 +30,5 @@ VALUES ('fish_caught'),
        ('pufferfish_caught'),
        ('cake_consumed'),
        ('chorus_fruit_consumed'),
-       ('end_gateway_used');
+       ('end_gateway_used'),
+       ('total_damage_given');
