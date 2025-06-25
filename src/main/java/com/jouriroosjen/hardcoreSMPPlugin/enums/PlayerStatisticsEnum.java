@@ -32,7 +32,11 @@ public enum PlayerStatisticsEnum {
     CAKE_CONSUMED(29),
     CHORUS_FRUIT_CONSUMED(30),
     END_GATEWAY_USED(31),
-    TOTAL_DAMAGE_GIVEN(32);
+    TOTAL_DAMAGE_GIVEN(32),
+    HOSTILE_MOBS_KILLED(33),
+    NEUTRAL_MOBS_KILLED(34),
+    PASSIVE_MOBS_KILLED(35),
+    PLAYERS_KILLED(36);
 
     private final int id;
 

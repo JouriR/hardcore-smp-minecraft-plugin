@@ -30,4 +30,8 @@ VALUES ('fish_caught'),
        ('cake_consumed'),
        ('chorus_fruit_consumed'),
        ('end_gateway_used'),
-       ('total_damage_given');
+       ('total_damage_given'),
+       ('hostile_mobs_killed'),
+       ('neutral_mobs_killed'),
+       ('passive_mobs_killed'),
+       ('players_killed');
