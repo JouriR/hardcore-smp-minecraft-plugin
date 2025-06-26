@@ -42,4 +42,5 @@ VALUES ('fish_caught'),
        ('shulker_box_opened'),
        ('barrel_opened'),
        ('blocks_placed'),
-       ('blocks_destroyed');
+       ('blocks_destroyed'),
+       ('items_enchanted');

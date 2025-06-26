@@ -44,7 +44,8 @@ public enum PlayerStatisticsEnum {
     SHULKER_BOX_OPENED(41),
     BARREL_OPENED(42),
     BLOCKS_PLACED(43),
-    BLOCKS_DESTROYED(44);
+    BLOCKS_DESTROYED(44),
+    ITEMS_ENCHANTED(45);
 
     private final int id;
 
