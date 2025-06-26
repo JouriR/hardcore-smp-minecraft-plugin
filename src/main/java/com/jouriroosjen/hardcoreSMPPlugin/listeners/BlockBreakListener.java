@@ -29,6 +29,18 @@ public class BlockBreakListener implements Listener {
     }
 
     /**
+     * Event handler for block break events.
+     *
+     * @param event The block break event.
+     */
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        Player player = event.getPlayer();
+
+        playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.BLOCKS_DESTROYED, 1);
+    }
+
+    /**
      * Event handler for potato harvest event.
      *
      * @param event The block break event.

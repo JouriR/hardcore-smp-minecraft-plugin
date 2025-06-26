@@ -40,4 +40,6 @@ VALUES ('fish_caught'),
        ('chest_opened'),
        ('trapped_chest_opened'),
        ('shulker_box_opened'),
-       ('barrel_opened');
+       ('barrel_opened'),
+       ('blocks_placed'),
+       ('blocks_destroyed');

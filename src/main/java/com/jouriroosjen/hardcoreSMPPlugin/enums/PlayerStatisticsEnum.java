@@ -42,7 +42,9 @@ public enum PlayerStatisticsEnum {
     CHEST_OPENED(39),
     TRAPPED_CHEST_OPENED(40),
     SHULKER_BOX_OPENED(41),
-    BARREL_OPENED(42);
+    BARREL_OPENED(42),
+    BLOCKS_PLACED(43),
+    BLOCKS_DESTROYED(44);
 
     private final int id;
 
