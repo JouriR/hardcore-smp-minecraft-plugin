@@ -35,4 +35,5 @@ VALUES ('fish_caught'),
        ('neutral_mobs_killed'),
        ('passive_mobs_killed'),
        ('players_killed'),
-       ('blocks_traveled');
+       ('blocks_traveled'),
+       ('entities_bred');

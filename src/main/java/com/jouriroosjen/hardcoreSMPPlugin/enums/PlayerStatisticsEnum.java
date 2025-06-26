@@ -37,7 +37,8 @@ public enum PlayerStatisticsEnum {
     NEUTRAL_MOBS_KILLED(34),
     PASSIVE_MOBS_KILLED(35),
     PLAYERS_KILLED(36),
-    BLOCKS_TRAVELED(37);
+    BLOCKS_TRAVELED(37),
+    ENTITIES_BRED(38);
 
     private final int id;
 
