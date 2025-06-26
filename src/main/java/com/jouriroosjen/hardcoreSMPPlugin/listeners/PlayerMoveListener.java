@@ -36,6 +36,9 @@ public class PlayerMoveListener implements Listener {
 
         if (!event.getFrom().getBlock().equals(event.getTo().getBlock())) {
             double distance = event.getFrom().distance(event.getTo());
+
+            if (Double.isNaN(distance)) return;
+
             playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.BLOCKS_TRAVELED, distance);
         }
     }
