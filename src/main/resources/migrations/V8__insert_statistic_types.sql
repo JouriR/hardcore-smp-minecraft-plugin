@@ -36,4 +36,8 @@ VALUES ('fish_caught'),
        ('passive_mobs_killed'),
        ('players_killed'),
        ('blocks_traveled'),
-       ('entities_bred');
+       ('entities_bred'),
+       ('chest_opened'),
+       ('trapped_chest_opened'),
+       ('shulker_box_opened'),
+       ('barrel_opened');

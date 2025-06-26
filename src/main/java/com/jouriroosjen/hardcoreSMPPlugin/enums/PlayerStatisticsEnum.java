@@ -38,7 +38,11 @@ public enum PlayerStatisticsEnum {
     PASSIVE_MOBS_KILLED(35),
     PLAYERS_KILLED(36),
     BLOCKS_TRAVELED(37),
-    ENTITIES_BRED(38);
+    ENTITIES_BRED(38),
+    CHEST_OPENED(39),
+    TRAPPED_CHEST_OPENED(40),
+    SHULKER_BOX_OPENED(41),
+    BARREL_OPENED(42);
 
     private final int id;
 
