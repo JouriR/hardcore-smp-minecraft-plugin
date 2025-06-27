@@ -47,4 +47,5 @@ VALUES ('fish_caught'),
        ('total_cactus_damage'),
        ('total_berry_bush_damage'),
        ('creepers_ignited'),
-       ('beds_exploded');
+       ('beds_exploded'),
+       ('bats_killed');

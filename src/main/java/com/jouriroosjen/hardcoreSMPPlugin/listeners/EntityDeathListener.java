@@ -54,13 +54,17 @@ public class EntityDeathListener implements Listener {
 
             case COW, SHEEP, PIG, CHICKEN, RABBIT, HORSE, MULE, DONKEY, TURTLE,
                  CAT, FOX, STRIDER, PARROT, SQUID, GLOW_SQUID, MOOSHROOM, AXOLOTL,
-                 CAMEL, FROG, SNIFFER, ARMADILLO, BAT, COD, SALMON, ALLAY, OCELOT, SNOW_GOLEM,
+                 CAMEL, FROG, SNIFFER, ARMADILLO, COD, SALMON, ALLAY, OCELOT, SNOW_GOLEM,
                  VILLAGER, TADPOLE, ZOMBIE_HORSE:
                 playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.PASSIVE_MOBS_KILLED, 1);
                 break;
 
             case PLAYER:
                 playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.PLAYERS_KILLED, 1);
+                break;
+
+            case BAT:
+                playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.BATS_KILLED, 1);
                 break;
 
             default:
