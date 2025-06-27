@@ -69,9 +69,16 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
 
         // Register event listeners
         getServer().getPluginManager().registerEvents(new BlockBreakListener(playerStatisticsManager), this);
+        getServer().getPluginManager().registerEvents(new BlockExplodeListener(this, playerStatisticsManager), this);
+        getServer().getPluginManager().registerEvents(new BlockPlaceListener(playerStatisticsManager), this);
+        getServer().getPluginManager().registerEvents(new CreeperIgniteListener(this, playerStatisticsManager), this);
+        getServer().getPluginManager().registerEvents(new EnchantItemListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new EndermanAttackPlayerListener(playerStatisticsManager), this);
+        getServer().getPluginManager().registerEvents(new EntityBreedListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new EntityDamageListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new EntityDeathListener(playerStatisticsManager), this);
+        getServer().getPluginManager().registerEvents(new EntityExplodeListener(playerStatisticsManager), this);
+        getServer().getPluginManager().registerEvents(new InventoryClickListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerAdvancementDoneListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerAnimationListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerBedEnterListener(playerStatisticsManager), this);
@@ -84,6 +91,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(this, databaseManager.connection, playtimeManager), this);
         getServer().getPluginManager().registerEvents(new PlayerJumpListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerKickListener(playtimeManager, playerStatisticsManager), this);
+        getServer().getPluginManager().registerEvents(new PlayerMoveListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerQuitListener(playtimeManager), this);
         getServer().getPluginManager().registerEvents(new PlayerTeleportListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerToggleFlightListener(playerStatisticsManager), this);
