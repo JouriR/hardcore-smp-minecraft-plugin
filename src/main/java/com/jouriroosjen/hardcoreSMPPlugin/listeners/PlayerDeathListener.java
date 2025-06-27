@@ -137,7 +137,7 @@ public class PlayerDeathListener implements Listener {
 
         // Save death to database
         try {
-            saveDeathToDatabase(player.getUniqueId());
+            saveDeathToDatabase(player.getUniqueId(), player.getLastDamageCause().getCause().toString());
         } catch (SQLException e) {
             plugin.getLogger().severe("[DATABASE] Failed to save death of player " + player.getName());
             e.printStackTrace();
@@ -199,11 +199,16 @@ public class PlayerDeathListener implements Listener {
      * Inserts a player's death into the {@code deaths} table.
      *
      * @param playerUuid The UUID of the player who died
+     * @param cause      The cause of death.
      * @throws SQLException If a database error occurs while inserting
      */
-    private void saveDeathToDatabase(UUID playerUuid) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement("INSERT INTO deaths (player_uuid) VALUES (?)")) {
+    private void saveDeathToDatabase(UUID playerUuid, String cause) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                INSERT INTO deaths (player_uuid, cause) 
+                VALUES (?, ?)
+                """)) {
             statement.setString(1, playerUuid.toString());
+            statement.setString(2, cause);
             statement.execute();
         }
     }
