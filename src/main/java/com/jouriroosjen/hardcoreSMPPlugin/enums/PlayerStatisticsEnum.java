@@ -48,7 +48,8 @@ public enum PlayerStatisticsEnum {
     ITEMS_ENCHANTED(45),
     TOTAL_CACTUS_DAMAGE(46),
     TOTAL_BERRY_BUSH_DAMAGE(47),
-    CREEPERS_IGNITED(48);
+    CREEPERS_IGNITED(48),
+    BEDS_EXPLODED(49);
 
     private final int id;
 

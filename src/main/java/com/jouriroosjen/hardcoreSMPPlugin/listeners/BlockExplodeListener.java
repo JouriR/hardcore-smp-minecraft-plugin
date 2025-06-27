@@ -73,6 +73,7 @@ public class BlockExplodeListener implements Listener {
                 })
                 .count();
 
+        playerStatisticsManager.incrementStatistic(responsiblePlayer.getUniqueId(), PlayerStatisticsEnum.BEDS_EXPLODED, 1);
         playerStatisticsManager.incrementStatistic(responsiblePlayer.getUniqueId(), PlayerStatisticsEnum.BLOCKS_DESTROYED, destroyedBlocksCount);
     }
 
@@ -156,7 +157,7 @@ public class BlockExplodeListener implements Listener {
 
                 if (playerUuid != null) {
                     Player player = Bukkit.getPlayer(playerUuid);
-                    
+
                     if (player != null) {
                         cleanupPlayerInteractions(playerUuid);
                         return player;
