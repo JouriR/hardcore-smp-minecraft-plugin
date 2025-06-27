@@ -172,6 +172,7 @@ public class CreeperIgniteListener implements Listener {
                 })
                 .count();
 
+        playerStatisticsManager.incrementStatistic(responsiblePlayer.getUniqueId(), PlayerStatisticsEnum.CREEPERS_IGNITED, 1);
         playerStatisticsManager.incrementStatistic(responsiblePlayer.getUniqueId(), PlayerStatisticsEnum.BLOCKS_DESTROYED, destroyedBlocksCount);
 
         // Clean up tracking data

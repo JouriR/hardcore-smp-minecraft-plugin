@@ -45,4 +45,5 @@ VALUES ('fish_caught'),
        ('blocks_destroyed'),
        ('items_enchanted'),
        ('total_cactus_damage'),
-       ('total_berry_bush_damage');
+       ('total_berry_bush_damage'),
+       ('creepers_ignited');
