@@ -69,6 +69,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
 
         // Register event listeners
         getServer().getPluginManager().registerEvents(new BlockBreakListener(playerStatisticsManager), this);
+        getServer().getPluginManager().registerEvents(new BlockExplodeListener(this, playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new BlockPlaceListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new CreeperIgniteListener(this, playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new EnchantItemListener(playerStatisticsManager), this);
