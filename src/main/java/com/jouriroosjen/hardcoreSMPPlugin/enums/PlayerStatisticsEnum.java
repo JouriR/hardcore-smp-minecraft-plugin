@@ -45,7 +45,9 @@ public enum PlayerStatisticsEnum {
     BARREL_OPENED(42),
     BLOCKS_PLACED(43),
     BLOCKS_DESTROYED(44),
-    ITEMS_ENCHANTED(45);
+    ITEMS_ENCHANTED(45),
+    TOTAL_CACTUS_DAMAGE(46),
+    TOTAL_BERRY_BUSH_DAMAGE(47);
 
     private final int id;
 

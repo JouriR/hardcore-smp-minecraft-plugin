@@ -43,4 +43,6 @@ VALUES ('fish_caught'),
        ('barrel_opened'),
        ('blocks_placed'),
        ('blocks_destroyed'),
-       ('items_enchanted');
+       ('items_enchanted'),
+       ('total_cactus_damage'),
+       ('total_berry_bush_damage');
