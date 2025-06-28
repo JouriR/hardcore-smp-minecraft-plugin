@@ -26,7 +26,7 @@ import java.util.UUID;
  * Command executor for the {@code /buyback} command, allowing dead players to revive themselves.
  *
  * @author Jouri Roosjen
- * @version 0.4.0
+ * @version 1.0.0
  */
 public class BuyBackCommand implements CommandExecutor {
     private final JavaPlugin plugin;

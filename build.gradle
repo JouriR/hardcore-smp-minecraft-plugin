@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.jouriroosjen'
-version = '1.0.1-SNAPSHOT'
+version = '0.1.0-BETA'
 
 repositories {
     mavenCentral()
