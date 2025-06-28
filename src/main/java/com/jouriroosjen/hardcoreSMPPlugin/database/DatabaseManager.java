@@ -12,7 +12,7 @@ import java.sql.SQLException;
  * The database file is located inside the plugin's data folder and is named {@code database.db}.
  *
  * @author Jouri Roosjen
- * @version 1.1.0
+ * @version 1.0.0
  */
 public class DatabaseManager {
     public final Connection connection;

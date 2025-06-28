@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
  * Example: {@code V2__create_deaths_table.sql}
  *
  * @author Jouri Roosjen
- * @version 1.0.2
+ * @version 1.0.0
  */
 public class MigrationsManager {
     private final JavaPlugin plugin;

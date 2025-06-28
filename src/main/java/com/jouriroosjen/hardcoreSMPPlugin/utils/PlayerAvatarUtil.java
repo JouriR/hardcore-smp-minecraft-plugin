@@ -11,7 +11,7 @@ import org.geysermc.floodgate.api.FloodgateApi;
  * Utility class for all things regarding the player avatar
  *
  * @author Jouri Roosjen
- * @version 1.0.0.0
+ * @version 1.0.0
  */
 public class PlayerAvatarUtil {
     private static final OkHttpClient HTTP = new OkHttpClient();

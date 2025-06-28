@@ -33,7 +33,7 @@ import java.util.UUID;
  * Listener class for handling player death events in the server.
  *
  * @author Jouri Roosjen
- * @version 0.2.1
+ * @version 1.0.0
  */
 public class PlayerDeathListener implements Listener {
     private final JavaPlugin plugin;
