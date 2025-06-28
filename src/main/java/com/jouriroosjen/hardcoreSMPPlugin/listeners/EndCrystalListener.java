@@ -2,6 +2,7 @@ package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 
 import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.EnderCrystal;
 import org.bukkit.entity.EntityType;
@@ -11,7 +12,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.projectiles.ProjectileSource;
 
 import java.util.Map;
@@ -25,7 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version 1.0.0
  */
 public class EndCrystalListener implements Listener {
-    private final JavaPlugin plugin;
     private final PlayerStatisticsManager playerStatisticsManager;
 
     private final Map<UUID, UUID> crystalDamagers = new ConcurrentHashMap<>();
@@ -33,11 +32,9 @@ public class EndCrystalListener implements Listener {
     /**
      * Constructs a new {@code EndCrystalListener} instance.
      *
-     * @param plugin                  The main plugin instance.
      * @param playerStatisticsManager The {@code playerStatisticsManager} instance.
      */
-    public EndCrystalListener(JavaPlugin plugin, PlayerStatisticsManager playerStatisticsManager) {
-        this.plugin = plugin;
+    public EndCrystalListener(PlayerStatisticsManager playerStatisticsManager) {
         this.playerStatisticsManager = playerStatisticsManager;
     }
 
@@ -62,10 +59,7 @@ public class EndCrystalListener implements Listener {
             if (shooter instanceof Player) damager = (Player) shooter;
         }
 
-        if (damager != null) {
-            crystalDamagers.put(crystal.getUniqueId(), damager.getUniqueId());
-            plugin.getLogger().info("Player " + damager.getName() + " damaged end crystal at " + crystal.getLocation());
-        }
+        if (damager != null) crystalDamagers.put(crystal.getUniqueId(), damager.getUniqueId());
     }
 
     /**
@@ -80,16 +74,10 @@ public class EndCrystalListener implements Listener {
         UUID crystalUuid = event.getEntity().getUniqueId();
         UUID playerUuid = crystalDamagers.remove(crystalUuid);
 
-        if (playerUuid == null) {
-            plugin.getLogger().info("End crystal exploded but no responsible player found");
-            return;
-        }
+        if (playerUuid == null) return;
 
-        Player responsiblePlayer = plugin.getServer().getPlayer(playerUuid);
-        if (responsiblePlayer == null) {
-            plugin.getLogger().info("Responsible player is no longer online");
-            return;
-        }
+        Player responsiblePlayer = Bukkit.getPlayer(playerUuid);
+        if (responsiblePlayer == null) return;
 
         long destroyedBlocksCount = event.blockList().stream()
                 .filter(block -> {
@@ -101,7 +89,6 @@ public class EndCrystalListener implements Listener {
                 })
                 .count();
 
-        plugin.getLogger().info("Player " + responsiblePlayer.getName() + " destroyed " + destroyedBlocksCount + " blocks with end crystal explosion at " + event.getLocation());
         playerStatisticsManager.incrementStatistic(playerUuid, PlayerStatisticsEnum.BLOCKS_DESTROYED, destroyedBlocksCount);
     }
 }
