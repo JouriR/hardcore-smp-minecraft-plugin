@@ -2,15 +2,24 @@ package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 
 import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.projectiles.ProjectileSource;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Handles entity damage events
@@ -19,14 +28,20 @@ import org.bukkit.event.entity.EntityDamageEvent;
  * @version 1.0.0
  */
 public class EntityDamageListener implements Listener {
+    private final JavaPlugin plugin;
     private final PlayerStatisticsManager playerStatisticsManager;
+
+    private final Map<Location, UUID> respawnAnchorExplosions = new HashMap<>();
+    private final Map<Location, UUID> crystalBreakers = new HashMap<>();
 
     /**
      * Constructs a new {@code EntityDamageListener} instance.
      *
+     * @param plugin                  The main plugin instance.
      * @param playerStatisticsManager The {@code playerStatisticsManager} instance.
      */
-    public EntityDamageListener(PlayerStatisticsManager playerStatisticsManager) {
+    public EntityDamageListener(JavaPlugin plugin, PlayerStatisticsManager playerStatisticsManager) {
+        this.plugin = plugin;
         this.playerStatisticsManager = playerStatisticsManager;
     }
 
@@ -78,8 +93,130 @@ public class EntityDamageListener implements Listener {
      */
     @EventHandler
     public void onPlayerDamageGiven(EntityDamageByEntityEvent event) {
-        if (!(event.getDamager() instanceof Player player)) return;
+        Player damager = getPlayerFromDamageSource(event);
+        if (damager == null) return;
 
-        playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.TOTAL_DAMAGE_GIVEN, event.getFinalDamage());
+        playerStatisticsManager.incrementStatistic(damager.getUniqueId(), PlayerStatisticsEnum.TOTAL_DAMAGE_GIVEN, event.getFinalDamage());
+    }
+
+    /**
+     * Event handler to track when a player places a respawn anchor.
+     *
+     * @param event The block place event.
+     */
+    @EventHandler
+    public void onRespawnAnchorPlace(BlockPlaceEvent event) {
+        if (event.getBlock().getType() != Material.RESPAWN_ANCHOR) return;
+        respawnAnchorExplosions.put(event.getBlock().getLocation(), event.getPlayer().getUniqueId());
+    }
+
+    /**
+     * Event handler for respawn anchor explosions in wrong dimension.
+     *
+     * @param event The entity damage event.
+     */
+    @EventHandler
+    public void onRespawnAnchorExplosion(EntityDamageEvent event) {
+        if (event.getCause() != EntityDamageEvent.DamageCause.BLOCK_EXPLOSION) return;
+
+        Location damageLoc = event.getEntity().getLocation();
+        for (Map.Entry<Location, UUID> entry : respawnAnchorExplosions.entrySet()) {
+            if (entry.getKey().getWorld().equals(damageLoc.getWorld()) &&
+                    entry.getKey().distance(damageLoc) <= 8.0) {
+                Player placer = Bukkit.getPlayer(entry.getValue());
+
+                if (placer != null)
+                    playerStatisticsManager.incrementStatistic(entry.getValue(), PlayerStatisticsEnum.TOTAL_DAMAGE_GIVEN, event.getFinalDamage());
+
+                break;
+            }
+        }
+    }
+
+    /**
+     * Event handler for when player breaks an end crystal.
+     *
+     * @param event The entity damage by entity event.
+     */
+    @EventHandler
+    public void onCrystalBreak(EntityDamageByEntityEvent event) {
+        if (event.getEntity() instanceof EnderCrystal && event.getDamager() instanceof Player player) {
+            Location crystalLoc = event.getEntity().getLocation();
+            crystalBreakers.put(crystalLoc, player.getUniqueId());
+
+            // Clean up after 5 seconds to prevent memory leaks
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                crystalBreakers.remove(crystalLoc);
+            }, 100L);
+        }
+    }
+
+    /**
+     * Determines if damage is done by a player and returns that player.
+     *
+     * @param event The entity damage by entity event.
+     * @return The player responsible for the damage, otherwise null
+     */
+    private Player getPlayerFromDamageSource(EntityDamageByEntityEvent event) {
+        Entity damager = event.getDamager();
+
+        // Direct damage
+        if (damager instanceof Player) return (Player) damager;
+
+        // Projectile damage
+        if (damager instanceof Projectile projectile) {
+            ProjectileSource shooter = projectile.getShooter();
+            if (shooter instanceof Player) return (Player) shooter;
+
+            return null;
+        }
+
+        // TNT damage
+        if (damager instanceof TNTPrimed tnt) {
+            Entity source = tnt.getSource();
+            if (source instanceof Player) return (Player) source;
+
+            return null;
+        }
+
+        // Firework damage
+        if (damager instanceof Firework firework) {
+            ProjectileSource shooter = firework.getShooter();
+            if (shooter instanceof Player) return (Player) shooter;
+
+            return null;
+        }
+
+        // Area Effect Cloud damage
+        if (damager instanceof AreaEffectCloud cloud) {
+            ProjectileSource source = cloud.getSource();
+            if (source instanceof Player) return (Player) source;
+
+            return null;
+        }
+
+        // End crystal damage
+        if (damager instanceof EnderCrystal crystal) return getLastCrystalBreaker(crystal);
+
+        return null;
+    }
+
+    /**
+     * Get the player who last broke an end crystal.
+     *
+     * @param crystal The crystal that got broken.
+     * @return The player who broke the crystal.
+     */
+    private Player getLastCrystalBreaker(EnderCrystal crystal) {
+        Location crystalLoc = crystal.getLocation();
+
+        for (Map.Entry<Location, UUID> entry : crystalBreakers.entrySet()) {
+            if (entry.getKey().getWorld().equals(crystalLoc.getWorld()) &&
+                    entry.getKey().distance(crystalLoc) <= 1.0) {
+                return Bukkit.getPlayer(entry.getValue());
+            }
+        }
+
+        return null;
     }
 }
