@@ -26,7 +26,7 @@ import java.sql.SQLException;
  * </p>
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.1.0
  */
 public final class HardcoreSMPPlugin extends JavaPlugin {
     private DatabaseManager databaseManager;
@@ -131,6 +131,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         playtimeManager.stopAllSessions();
         playtimeManager.stopPlaytimeTracker();
         playtimeManager.stopPlaytimeBackupsTask();
+        playerStatisticsManager.shutdown();
 
         // Close database connection
         try {
