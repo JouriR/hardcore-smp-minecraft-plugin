@@ -36,7 +36,7 @@ public class CreeperIgniteListener implements Listener {
     private final Map<UUID, IgnitionData> creeperIgnitionMap = new ConcurrentHashMap<>();
 
     private static final long INTERACTION_TIMEOUT = 3000L; // 3 seconds
-    private static final long CLEANUP_INTERVAL = 5000L; // 5 seconds
+    private static final long CLEANUP_INTERVAL = 10000L; // 10 seconds
     private static final double MAX_IGNITION_DISTANCE = 8.0;
 
     /**
