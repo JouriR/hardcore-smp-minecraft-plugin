@@ -9,28 +9,63 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Handles block explode events.
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.1.0
  */
 public class BlockExplodeListener implements Listener {
     private final JavaPlugin plugin;
     private final PlayerStatisticsManager playerStatisticsManager;
 
-    private final Map<Location, UUID> recentBedInteractions = new HashMap<>();
-    private static final long BED_INTERACTION_TIMEOUT = 5000; // 5 seconds
+    private final Map<Location, BedInteraction> recentBedInteractions = new ConcurrentHashMap<>();
+
+    private static final long BED_INTERACTION_TIMEOUT = 5000L; // 5 seconds
+    private static final long CLEANUP_INTERVAL = 10000L; // 10 seconds
+
+    private static final Set<World.Environment> DANGEROUS_ENVIRONMENTS = EnumSet.of(
+            World.Environment.NETHER,
+            World.Environment.THE_END
+    );
+
+    private static final Set<Material> INDESTRUCTIBLE_MATERIALS = EnumSet.of(
+            Material.BEDROCK,
+            Material.OBSIDIAN,
+            Material.FIRE,
+            Material.SOUL_FIRE,
+            Material.AIR,
+            Material.VOID_AIR,
+            Material.CAVE_AIR
+    );
+
+    /**
+     * Represents a bed interaction.
+     *
+     * @param playerUuid The unique ID of the player that interacted.
+     * @param timestamp  The timestamp when the interaction happened.
+     */
+    private record BedInteraction(UUID playerUuid, long timestamp) {
+        /**
+         * Checks if an interaction is expired or not.
+         *
+         * @param currentTime The current timestamp.
+         * @return True if the interaction is expired, otherwise false.
+         */
+        boolean isExpired(long currentTime) {
+            return currentTime - timestamp > BED_INTERACTION_TIMEOUT;
+        }
+    }
 
     /**
      * Constructs a new {@code BlockExplodeListener} instance.
@@ -41,6 +76,8 @@ public class BlockExplodeListener implements Listener {
     public BlockExplodeListener(JavaPlugin plugin, PlayerStatisticsManager playerStatisticsManager) {
         this.plugin = plugin;
         this.playerStatisticsManager = playerStatisticsManager;
+
+        startPeriodicCleanup();
     }
 
     /**
@@ -48,33 +85,25 @@ public class BlockExplodeListener implements Listener {
      *
      * @param event The block explode event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockExplode(BlockExplodeEvent event) {
         Block explodedBlock = event.getBlock();
-
         World.Environment environment = explodedBlock.getWorld().getEnvironment();
-        if (environment != World.Environment.NETHER && environment != World.Environment.THE_END) return;
+
+        if (!DANGEROUS_ENVIRONMENTS.contains(environment)) return;
 
         // Since the bed block is already AIR when this event fires, we need to check if this explosion
         // was caused by a bed by looking for recent bed interactions at this location
-        Player responsiblePlayer = findPlayerWhoUsedBed(explodedBlock);
-
+        Player responsiblePlayer = findPlayerWhoUsedBed(explodedBlock.getLocation());
         if (responsiblePlayer == null) return;
 
-        long destroyedBlocksCount = event.blockList().stream()
-                .filter(block -> {
-                    Material type = block.getType();
-                    return type.isSolid() &&
-                            type != Material.BEDROCK &&
-                            type != Material.OBSIDIAN &&
-                            !type.isAir() &&
-                            type != Material.FIRE &&
-                            type != Material.SOUL_FIRE;
-                })
-                .count();
+        long destroyedBlocksCount = countDestroyableBlocks(event.blockList());
 
-        playerStatisticsManager.incrementStatistic(responsiblePlayer.getUniqueId(), PlayerStatisticsEnum.BEDS_EXPLODED, 1);
-        playerStatisticsManager.incrementStatistic(responsiblePlayer.getUniqueId(), PlayerStatisticsEnum.BLOCKS_DESTROYED, destroyedBlocksCount);
+        UUID playerUuid = responsiblePlayer.getUniqueId();
+        playerStatisticsManager.incrementStatistic(playerUuid, PlayerStatisticsEnum.BEDS_EXPLODED, 1);
+
+        if (destroyedBlocksCount > 0)
+            playerStatisticsManager.incrementStatistic(playerUuid, PlayerStatisticsEnum.BLOCKS_DESTROYED, destroyedBlocksCount);
     }
 
     /**
@@ -82,39 +111,25 @@ public class BlockExplodeListener implements Listener {
      *
      * @param event The player interact event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-        if (event.getClickedBlock() == null) return;
 
-        Material blockType = event.getClickedBlock().getType();
-        if (!isBedBlock(blockType)) return;
+        Block clickedBlock = event.getClickedBlock();
+        if (clickedBlock == null || !isBedBlock(clickedBlock.getType())) return;
 
-        World.Environment environment = event.getClickedBlock().getWorld().getEnvironment();
-        if (environment != World.Environment.NETHER && environment != World.Environment.THE_END) return;
+        World.Environment environment = clickedBlock.getWorld().getEnvironment();
+        if (!DANGEROUS_ENVIRONMENTS.contains(environment)) return;
 
-        Location bedLocation = event.getClickedBlock().getLocation();
         UUID playerUuid = event.getPlayer().getUniqueId();
+        Location bedLocation = clickedBlock.getLocation();
+        long currentTime = System.currentTimeMillis();
 
-        // Store both the clicked block and its adjacent bed block
-        recentBedInteractions.put(bedLocation, playerUuid);
+        BedInteraction interaction = new BedInteraction(playerUuid, currentTime);
+        recentBedInteractions.put(bedLocation, interaction);
 
-        // Also store nearby bed blocks (since beds are 2 blocks)
-        for (int x = -1; x <= 1; x++) {
-            for (int z = -1; z <= 1; z++) {
-                if (x == 0 && z == 0) continue;
-
-                Location nearbyLocation = bedLocation.clone().add(x, 0, z);
-                Block nearbyBlock = nearbyLocation.getBlock();
-
-                if (isBedBlock(nearbyBlock.getType())) recentBedInteractions.put(nearbyLocation, playerUuid);
-            }
-        }
-
-        // Clean up after timeout
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            cleanupPlayerInteractions(playerUuid);
-        }, BED_INTERACTION_TIMEOUT / 50);
+        // Store adjacent bed block since beds are 2 blocks
+        storeBedBlockInteractions(bedLocation, interaction);
     }
 
     /**
@@ -128,40 +143,73 @@ public class BlockExplodeListener implements Listener {
     }
 
     /**
-     * Find the player that used the bed.
+     * Store bed block interactions for adjacent blocks.
      *
-     * @param bedBlock The bed that exploded.
-     * @return The player that interacted with the bed.
+     * @param bedLocation The bed location.
+     * @param interaction The interaction.
      */
-    private Player findPlayerWhoUsedBed(Block bedBlock) {
-        Location bedLocation = bedBlock.getLocation();
-
-        // Check exact location first
-        UUID playerUuid = recentBedInteractions.get(bedLocation);
-        if (playerUuid != null) {
-            Player player = Bukkit.getPlayer(playerUuid);
-
-            if (player != null) {
-                cleanupPlayerInteractions(playerUuid);
-                return player;
-            }
-        }
-
-        // Check nearby locations (expanded search area)
-        for (int x = -2; x <= 2; x++) {
-            for (int z = -2; z <= 2; z++) {
+    private void storeBedBlockInteractions(Location bedLocation, BedInteraction interaction) {
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
                 if (x == 0 && z == 0) continue;
 
-                Location checkLocation = bedLocation.clone().add(x, 0, z);
-                playerUuid = recentBedInteractions.get(checkLocation);
+                Location nearbyLocation = bedLocation.clone().add(x, 0, z);
+                Block nearbyBlock = nearbyLocation.getBlock();
 
-                if (playerUuid != null) {
-                    Player player = Bukkit.getPlayer(playerUuid);
+                if (isBedBlock(nearbyBlock.getType()))
+                    recentBedInteractions.put(nearbyLocation, interaction);
+            }
+        }
+    }
 
-                    if (player != null) {
-                        cleanupPlayerInteractions(playerUuid);
-                        return player;
-                    }
+    /**
+     * Count blocks that can be destroyed.
+     *
+     * @param blocks The list of blocks to check.
+     * @return The count of destroyable blocks.
+     */
+    private long countDestroyableBlocks(List<Block> blocks) {
+        long count = 0;
+        for (Block block : blocks) {
+            Material type = block.getType();
+            if (type.isSolid() && !type.isAir() && !INDESTRUCTIBLE_MATERIALS.contains(type)) count++;
+        }
+        return count;
+    }
+
+    /**
+     * Find the player that used the bed.
+     *
+     * @param explosionLocation The location of the explosion.
+     * @return The player that interacted with the bed, or null if not found.
+     */
+    private Player findPlayerWhoUsedBed(Location explosionLocation) {
+        long currentTime = System.currentTimeMillis();
+
+        // Check exact location first
+        BedInteraction interaction = recentBedInteractions.get(explosionLocation);
+        if (interaction != null && !interaction.isExpired(currentTime)) {
+            Player player = Bukkit.getPlayer(interaction.playerUuid);
+            if (player == null) return null;
+
+            cleanupPlayerInteractions(interaction.playerUuid);
+            return player;
+        }
+
+        // Check nearby locations
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                if (x == 0 && z == 0) continue;
+
+                Location checkLocation = explosionLocation.clone().add(x, 0, z);
+                interaction = recentBedInteractions.get(checkLocation);
+
+                if (interaction != null && !interaction.isExpired(currentTime)) {
+                    Player player = Bukkit.getPlayer(interaction.playerUuid);
+                    if (player == null) return null;
+
+                    cleanupPlayerInteractions(interaction.playerUuid);
+                    return player;
                 }
             }
         }
@@ -176,5 +224,21 @@ public class BlockExplodeListener implements Listener {
      */
     private void cleanupPlayerInteractions(UUID playerUuid) {
         recentBedInteractions.entrySet().removeIf(entry -> entry.getValue().equals(playerUuid));
+    }
+
+    /**
+     * Start periodic cleanup task for expired interactions.
+     */
+    private void startPeriodicCleanup() {
+        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
+            long currentTime = System.currentTimeMillis();
+            Iterator<Map.Entry<Location, BedInteraction>> iterator = recentBedInteractions.entrySet().iterator();
+
+            while (iterator.hasNext()) {
+                Map.Entry<Location, BedInteraction> entry = iterator.next();
+
+                if (entry.getValue().isExpired(currentTime)) iterator.remove();
+            }
+        }, CLEANUP_INTERVAL / 50, CLEANUP_INTERVAL / 50);
     }
 }
