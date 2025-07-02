@@ -2,6 +2,7 @@ package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 
 import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
+import com.jouriroosjen.hardcoreSMPPlugin.utils.BlockUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -23,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Handles block explode events.
  *
  * @author Jouri Roosjen
- * @version 1.1.0
+ * @version 2.0.0
  */
 public class BlockExplodeListener implements Listener {
     private final JavaPlugin plugin;
@@ -37,16 +38,6 @@ public class BlockExplodeListener implements Listener {
     private static final Set<World.Environment> DANGEROUS_ENVIRONMENTS = EnumSet.of(
             World.Environment.NETHER,
             World.Environment.THE_END
-    );
-
-    private static final Set<Material> INDESTRUCTIBLE_MATERIALS = EnumSet.of(
-            Material.BEDROCK,
-            Material.OBSIDIAN,
-            Material.FIRE,
-            Material.SOUL_FIRE,
-            Material.AIR,
-            Material.VOID_AIR,
-            Material.CAVE_AIR
     );
 
     /**
@@ -97,7 +88,7 @@ public class BlockExplodeListener implements Listener {
         Player responsiblePlayer = findPlayerWhoUsedBed(explodedBlock.getLocation());
         if (responsiblePlayer == null) return;
 
-        long destroyedBlocksCount = countDestroyableBlocks(event.blockList());
+        long destroyedBlocksCount = BlockUtil.countExplodableBlocks(event.blockList());
 
         UUID playerUuid = responsiblePlayer.getUniqueId();
         playerStatisticsManager.incrementStatistic(playerUuid, PlayerStatisticsEnum.BEDS_EXPLODED, 1);
@@ -160,21 +151,6 @@ public class BlockExplodeListener implements Listener {
                     recentBedInteractions.put(nearbyLocation, interaction);
             }
         }
-    }
-
-    /**
-     * Count blocks that can be destroyed.
-     *
-     * @param blocks The list of blocks to check.
-     * @return The count of destroyable blocks.
-     */
-    private long countDestroyableBlocks(List<Block> blocks) {
-        long count = 0;
-        for (Block block : blocks) {
-            Material type = block.getType();
-            if (type.isSolid() && !type.isAir() && !INDESTRUCTIBLE_MATERIALS.contains(type)) count++;
-        }
-        return count;
     }
 
     /**
