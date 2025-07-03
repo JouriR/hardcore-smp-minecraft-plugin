@@ -12,7 +12,7 @@ import org.bukkit.event.player.PlayerBedEnterEvent;
  * Handles player bed enter events
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.0.1
  */
 public class PlayerBedEnterListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;

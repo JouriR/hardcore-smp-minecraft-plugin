@@ -14,7 +14,7 @@ import org.bukkit.util.RayTraceResult;
  * Handles player animation events.
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.1.0
  */
 public class PlayerAnimationListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
