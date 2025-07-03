@@ -15,13 +15,10 @@ import java.util.Set;
  */
 public class BlockUtil {
     private static final Set<Material> INDESTRUCTIBLE_MATERIALS = EnumSet.of(
-            Material.BEDROCK,
-            Material.OBSIDIAN,
-            Material.FIRE,
-            Material.SOUL_FIRE,
-            Material.AIR,
-            Material.VOID_AIR,
-            Material.CAVE_AIR
+            Material.BEDROCK, Material.OBSIDIAN, Material.FIRE, Material.SOUL_FIRE,
+            Material.AIR, Material.VOID_AIR, Material.CAVE_AIR, Material.LIGHT,
+            Material.CRYING_OBSIDIAN, Material.BARRIER, Material.COMMAND_BLOCK, Material.CHAIN_COMMAND_BLOCK,
+            Material.REPEATING_COMMAND_BLOCK, Material.WATER, Material.LAVA, Material.BUBBLE_COLUMN
     );
 
     /**
