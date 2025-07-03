@@ -3,15 +3,15 @@ package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 import com.destroystokyo.paper.event.entity.EndermanAttackPlayerEvent;
 import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 
 /**
  * Handle Enderman attack player events
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.0.1
  */
 public class EndermanAttackPlayerListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
@@ -30,11 +30,8 @@ public class EndermanAttackPlayerListener implements Listener {
      *
      * @param event The Enderman attack player event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEndermanAttackPlayer(EndermanAttackPlayerEvent event) {
-        if (event.isCancelled()) return;
-
-        Player player = event.getPlayer();
-        playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.ENDERMAN_ATTACKS, 1);
+        playerStatisticsManager.incrementStatistic(event.getPlayer().getUniqueId(), PlayerStatisticsEnum.ENDERMAN_ATTACKS, 1);
     }
 }
