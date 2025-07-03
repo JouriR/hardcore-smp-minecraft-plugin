@@ -4,6 +4,7 @@ import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerBedEnterEvent;
 
@@ -30,11 +31,13 @@ public class PlayerBedEnterListener implements Listener {
      *
      * @param event The player bed enter event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerBedEnter(PlayerBedEnterEvent event) {
-        Player player = event.getPlayer();
+        if (event.getBedEnterResult() != PlayerBedEnterEvent.BedEnterResult.OK) return;
 
-        if (event.getBedEnterResult() == PlayerBedEnterEvent.BedEnterResult.OK)
-            playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.BED_USED, 1);
+        Player player = event.getPlayer();
+        if (player == null) return;
+
+        playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.BED_USED, 1);
     }
 }
