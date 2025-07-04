@@ -2,20 +2,71 @@ package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 
 import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
+
+import java.util.EnumMap;
+import java.util.Set;
 
 /**
  * Handles entity death events
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 2.0.0
  */
 public class EntityDeathListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
+
+    private static final EnumMap<EntityType, PlayerStatisticsEnum> MOB_CATEGORIES = new EnumMap<>(EntityType.class);
+
+    static {
+        // Hostile mobs
+        Set<EntityType> hostileMobs = Set.of(
+                EntityType.ZOMBIE, EntityType.SKELETON, EntityType.CREEPER, EntityType.SPIDER,
+                EntityType.CAVE_SPIDER, EntityType.WITCH, EntityType.BLAZE, EntityType.GHAST,
+                EntityType.MAGMA_CUBE, EntityType.PHANTOM, EntityType.SHULKER, EntityType.SILVERFISH,
+                EntityType.DROWNED, EntityType.PILLAGER, EntityType.VINDICATOR, EntityType.EVOKER,
+                EntityType.STRAY, EntityType.WITHER_SKELETON, EntityType.GUARDIAN, EntityType.ELDER_GUARDIAN,
+                EntityType.HOGLIN, EntityType.ZOGLIN, EntityType.PIGLIN_BRUTE, EntityType.ZOMBIFIED_PIGLIN,
+                EntityType.ENDERMAN, EntityType.WARDEN, EntityType.RAVAGER, EntityType.BOGGED,
+                EntityType.BREEZE, EntityType.CREAKING, EntityType.ENDER_DRAGON, EntityType.WITHER,
+                EntityType.ENDERMITE, EntityType.GIANT, EntityType.HUSK, EntityType.ILLUSIONER,
+                EntityType.SLIME, EntityType.VEX, EntityType.ZOMBIE_VILLAGER
+        );
+
+        // Neutral mobs
+        Set<EntityType> neutralMobs = Set.of(
+                EntityType.WOLF, EntityType.BEE, EntityType.LLAMA, EntityType.GOAT,
+                EntityType.POLAR_BEAR, EntityType.PANDA, EntityType.TRADER_LLAMA,
+                EntityType.DOLPHIN, EntityType.IRON_GOLEM, EntityType.PIGLIN, EntityType.SKELETON_HORSE
+        );
+
+        // Passive mobs
+        Set<EntityType> passiveMobs = Set.of(
+                EntityType.COW, EntityType.SHEEP, EntityType.PIG, EntityType.CHICKEN,
+                EntityType.RABBIT, EntityType.HORSE, EntityType.MULE, EntityType.DONKEY,
+                EntityType.TURTLE, EntityType.CAT, EntityType.FOX, EntityType.STRIDER,
+                EntityType.PARROT, EntityType.SQUID, EntityType.GLOW_SQUID, EntityType.MOOSHROOM,
+                EntityType.AXOLOTL, EntityType.CAMEL, EntityType.FROG, EntityType.SNIFFER,
+                EntityType.ARMADILLO, EntityType.COD, EntityType.SALMON, EntityType.ALLAY,
+                EntityType.OCELOT, EntityType.SNOW_GOLEM, EntityType.VILLAGER, EntityType.TADPOLE,
+                EntityType.ZOMBIE_HORSE
+        );
+
+        // Populate the lookup map
+        hostileMobs.forEach(type -> MOB_CATEGORIES.put(type, PlayerStatisticsEnum.HOSTILE_MOBS_KILLED));
+        neutralMobs.forEach(type -> MOB_CATEGORIES.put(type, PlayerStatisticsEnum.NEUTRAL_MOBS_KILLED));
+        passiveMobs.forEach(type -> MOB_CATEGORIES.put(type, PlayerStatisticsEnum.PASSIVE_MOBS_KILLED));
+
+        // Special cases
+        MOB_CATEGORIES.put(EntityType.PLAYER, PlayerStatisticsEnum.PLAYERS_KILLED);
+        MOB_CATEGORIES.put(EntityType.BAT, PlayerStatisticsEnum.BATS_KILLED);
+    }
 
     /**
      * Constructs a new {@code EntityDeathListener} instance.
@@ -31,44 +82,15 @@ public class EntityDeathListener implements Listener {
      *
      * @param event The entity death event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityDeath(EntityDeathEvent event) {
         LivingEntity entity = event.getEntity();
 
-        if (entity.getKiller() == null || !(entity.getKiller() instanceof Player player)) return;
+        if (!(entity.getKiller() instanceof Player player)) return;
 
-        switch (event.getEntityType()) {
-            case ZOMBIE, SKELETON, CREEPER, SPIDER, CAVE_SPIDER, WITCH, BLAZE, GHAST,
-                 MAGMA_CUBE, PHANTOM, SHULKER, SILVERFISH, DROWNED, PILLAGER, VINDICATOR,
-                 EVOKER, STRAY, WITHER_SKELETON, GUARDIAN, ELDER_GUARDIAN, HOGLIN, ZOGLIN,
-                 PIGLIN_BRUTE, ZOMBIFIED_PIGLIN, ENDERMAN, WARDEN, RAVAGER, BOGGED, BREEZE,
-                 CREAKING, ENDER_DRAGON, WITHER, ENDERMITE, GIANT, HUSK, ILLUSIONER, SLIME,
-                 VEX, ZOMBIE_VILLAGER:
-                playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.HOSTILE_MOBS_KILLED, 1);
-                break;
+        PlayerStatisticsEnum statisticType = MOB_CATEGORIES.get(entity.getType());
+        if (statisticType == null) return;
 
-            case WOLF, BEE, LLAMA, GOAT, POLAR_BEAR, PANDA, TRADER_LLAMA, DOLPHIN, IRON_GOLEM,
-                 PIGLIN, SKELETON_HORSE:
-                playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.NEUTRAL_MOBS_KILLED, 1);
-                break;
-
-            case COW, SHEEP, PIG, CHICKEN, RABBIT, HORSE, MULE, DONKEY, TURTLE,
-                 CAT, FOX, STRIDER, PARROT, SQUID, GLOW_SQUID, MOOSHROOM, AXOLOTL,
-                 CAMEL, FROG, SNIFFER, ARMADILLO, COD, SALMON, ALLAY, OCELOT, SNOW_GOLEM,
-                 VILLAGER, TADPOLE, ZOMBIE_HORSE:
-                playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.PASSIVE_MOBS_KILLED, 1);
-                break;
-
-            case PLAYER:
-                playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.PLAYERS_KILLED, 1);
-                break;
-
-            case BAT:
-                playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.BATS_KILLED, 1);
-                break;
-
-            default:
-                break;
-        }
+        playerStatisticsManager.incrementStatistic(player.getUniqueId(), statisticType, 1);
     }
 }

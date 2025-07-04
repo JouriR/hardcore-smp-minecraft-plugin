@@ -2,19 +2,35 @@ package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 
 import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerTeleportEvent;
+
+import java.util.EnumMap;
+import java.util.Map;
 
 /**
  * Handles player teleport events
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.1.0
  */
 public class PlayerTeleportListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
+
+    private static final Map<PlayerTeleportEvent.TeleportCause, PlayerStatisticsEnum> TELEPORT_STATISTICS =
+            new EnumMap<>(PlayerTeleportEvent.TeleportCause.class);
+
+    static {
+        TELEPORT_STATISTICS.put(PlayerTeleportEvent.TeleportCause.CHORUS_FRUIT, PlayerStatisticsEnum.CHORUS_FRUIT_CONSUMED);
+        TELEPORT_STATISTICS.put(PlayerTeleportEvent.TeleportCause.END_GATEWAY, PlayerStatisticsEnum.END_GATEWAY_USED);
+        TELEPORT_STATISTICS.put(PlayerTeleportEvent.TeleportCause.END_PORTAL, PlayerStatisticsEnum.END_PORTAL_USED);
+        TELEPORT_STATISTICS.put(PlayerTeleportEvent.TeleportCause.ENDER_PEARL, PlayerStatisticsEnum.ENDER_PEARL_USED);
+        TELEPORT_STATISTICS.put(PlayerTeleportEvent.TeleportCause.NETHER_PORTAL, PlayerStatisticsEnum.NETHER_PORTAL_USED);
+    }
 
     /**
      * Constructs a new {@code PlayerTeleportListener} instance.
@@ -30,42 +46,40 @@ public class PlayerTeleportListener implements Listener {
      *
      * @param event The player teleport event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerTeleport(PlayerTeleportEvent event) {
         Player player = event.getPlayer();
+        PlayerTeleportEvent.TeleportCause cause = event.getCause();
 
-        switch (event.getCause()) {
-            case CHORUS_FRUIT:
-                playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.CHORUS_FRUIT_CONSUMED, 1);
-                break;
-
-            case END_GATEWAY:
-                playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.END_GATEWAY_USED, 1);
-                break;
-
-            case END_PORTAL:
-                playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.END_PORTAL_USED, 1);
-                break;
-
-            case ENDER_PEARL:
-                playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.ENDER_PEARL_USED, 1);
-                break;
-
-            case NETHER_PORTAL:
-                playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.NETHER_PORTAL_USED, 1);
-                break;
-
-            case UNKNOWN:
-                String fromWorldName = event.getFrom().getWorld().getName();
-                String toWorldName = event.getTo().getWorld().getName();
-
-                if (fromWorldName.equals("world_the_end") && toWorldName.equals("world")) {
-                    playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.END_PORTAL_USED, 1);
-                }
-                break;
-
-            default:
-                break;
+        PlayerStatisticsEnum statistic = TELEPORT_STATISTICS.get(cause);
+        if (statistic != null) {
+            playerStatisticsManager.incrementStatistic(player.getUniqueId(), statistic, 1);
+            return;
         }
+
+        // Handle special case for UNKNOWN cause (end portal exit)
+        if (cause == PlayerTeleportEvent.TeleportCause.UNKNOWN)
+            handleUnknownTeleport(event, player);
+    }
+
+    /**
+     * Handles teleport events with UNKNOWN cause, specifically end portal exits.
+     *
+     * @param event  The teleport event
+     * @param player The player who teleported
+     */
+    private void handleUnknownTeleport(PlayerTeleportEvent event, Player player) {
+        Location from = event.getFrom();
+        Location to = event.getTo();
+
+        if (from.getWorld() == null || to == null || to.getWorld() == null)
+            return;
+
+        String fromWorldName = from.getWorld().getName();
+        String toWorldName = to.getWorld().getName();
+
+        // Detect end portal exit (end -> overworld)
+        if ("world_the_end".equals(fromWorldName) && "world".equals(toWorldName))
+            playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.END_PORTAL_USED, 1);
     }
 }
