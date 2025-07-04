@@ -3,8 +3,8 @@ package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlaytimeManager;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerKickEvent;
 
@@ -14,7 +14,7 @@ import java.util.UUID;
  * Handles player kick events.
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.0.1
  */
 public class PlayerKickListener implements Listener {
     private final PlaytimeManager playtimeManager;
@@ -36,16 +36,14 @@ public class PlayerKickListener implements Listener {
      *
      * @param event The player kick event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerKick(PlayerKickEvent event) {
-        Player player = event.getPlayer();
-        UUID playerUuid = player.getUniqueId();
+        UUID playerUuid = event.getPlayer().getUniqueId();
 
         playtimeManager.stopSession(playerUuid);
 
         // Update statistic on idle kick
-        if (event.getCause() == PlayerKickEvent.Cause.IDLING) {
+        if (event.getCause() == PlayerKickEvent.Cause.IDLING)
             playerStatisticsManager.incrementStatistic(playerUuid, PlayerStatisticsEnum.IDLE_KICKS, 1);
-        }
     }
 }

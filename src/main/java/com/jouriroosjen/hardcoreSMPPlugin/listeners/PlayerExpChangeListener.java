@@ -2,8 +2,8 @@ package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 
 import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerExpChangeEvent;
 
@@ -11,7 +11,7 @@ import org.bukkit.event.player.PlayerExpChangeEvent;
  * Handles player exp change events.
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.0.1
  */
 public class PlayerExpChangeListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
@@ -30,11 +30,11 @@ public class PlayerExpChangeListener implements Listener {
      *
      * @param event The player exp change event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerExpChange(PlayerExpChangeEvent event) {
-        Player player = event.getPlayer();
         int expAmount = event.getAmount();
+        if (expAmount <= 0) return;
 
-        playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.TOTAL_EXPERIENCE_GAINED, expAmount);
+        playerStatisticsManager.incrementStatistic(event.getPlayer().getUniqueId(), PlayerStatisticsEnum.TOTAL_EXPERIENCE_GAINED, expAmount);
     }
 }

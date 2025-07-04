@@ -7,6 +7,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 
@@ -14,7 +15,7 @@ import org.bukkit.event.block.BlockBreakEvent;
  * Handles block break events
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.1.0
  */
 public class BlockBreakListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
@@ -33,27 +34,18 @@ public class BlockBreakListener implements Listener {
      *
      * @param event The block break event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
-
-        playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.BLOCKS_DESTROYED, 1);
-    }
-
-    /**
-     * Event handler for potato harvest event.
-     *
-     * @param event The block break event.
-     */
-    @EventHandler
-    public void onPotatoHarvest(BlockBreakEvent event) {
         Block block = event.getBlock();
 
-        if (block.getType() != Material.POTATOES) return;
-        if (!(block.getBlockData() instanceof Ageable ageable)) return;
-        if (ageable.getAge() < ageable.getMaximumAge()) return;
+        playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.BLOCKS_DESTROYED, 1);
 
-        Player player = event.getPlayer();
-        playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.POTATOES_HARVESTED, 1);
+        // Track if a potato is harvested
+        if (block.getType() == Material.POTATOES &&
+                block.getBlockData() instanceof Ageable ageable &&
+                ageable.getAge() == ageable.getMaximumAge()) {
+            playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.POTATOES_HARVESTED, 1);
+        }
     }
 }

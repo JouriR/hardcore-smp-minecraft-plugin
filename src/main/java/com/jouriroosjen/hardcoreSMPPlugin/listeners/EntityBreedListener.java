@@ -4,6 +4,7 @@ import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityBreedEvent;
 
@@ -11,7 +12,7 @@ import org.bukkit.event.entity.EntityBreedEvent;
  * Handles entity breed events
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.0.1
  */
 public class EntityBreedListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
@@ -30,7 +31,7 @@ public class EntityBreedListener implements Listener {
      *
      * @param event The entity breed event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityBreed(EntityBreedEvent event) {
         if (!(event.getBreeder() instanceof Player player)) return;
 

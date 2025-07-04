@@ -4,6 +4,7 @@ import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 
@@ -11,7 +12,7 @@ import org.bukkit.event.player.PlayerToggleSneakEvent;
  * Handles player toggle sneak events.
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.0.1
  */
 public class PlayerToggleSneakListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
@@ -30,12 +31,11 @@ public class PlayerToggleSneakListener implements Listener {
      *
      * @param event The player toggle sneak event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerToggleSneak(PlayerToggleSneakEvent event) {
         Player player = event.getPlayer();
 
-        if (!event.isSneaking()) {
+        if (!event.isSneaking())
             playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.SNEAKED, 1);
-        }
     }
 }
