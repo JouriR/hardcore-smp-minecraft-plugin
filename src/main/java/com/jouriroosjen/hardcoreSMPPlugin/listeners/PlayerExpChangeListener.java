@@ -11,7 +11,7 @@ import org.bukkit.event.player.PlayerExpChangeEvent;
  * Handles player exp change events.
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.0.1
  */
 public class PlayerExpChangeListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
