@@ -4,19 +4,20 @@ import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
 import io.papermc.paper.event.player.PlayerTradeEvent;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 
 /**
  * Handles player trade events.
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.0.1
  */
 public class PlayerTradeListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
 
     /**
-     * Construct a ne {@code PlayerTradeListener} instance.
+     * Construct a new {@code PlayerTradeListener} instance.
      *
      * @param playerStatisticsManager The {@code playerStatisticsManager} instance
      */
@@ -29,7 +30,7 @@ public class PlayerTradeListener implements Listener {
      *
      * @param event The player trade event
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerTrade(PlayerTradeEvent event) {
         playerStatisticsManager.incrementStatistic(event.getPlayer().getUniqueId(), PlayerStatisticsEnum.TRADES, 1);
     }
