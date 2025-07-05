@@ -2,16 +2,18 @@ package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 
 import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
-import org.bukkit.Location;
-import org.bukkit.World;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.projectiles.ProjectileSource;
+
+import java.util.Set;
 
 /**
  * Handles entity damage events
@@ -21,6 +23,11 @@ import org.bukkit.projectiles.ProjectileSource;
  */
 public class EntityDamageListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
+
+    private static final Set<BlockFace> ADJACENT_FACES = Set.of(
+            BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST,
+            BlockFace.UP, BlockFace.DOWN
+    );
 
     /**
      * Constructs a new {@code EntityDamageListener} instance.
@@ -36,40 +43,21 @@ public class EntityDamageListener implements Listener {
      *
      * @param event The entity damage event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerDamageReceived(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
 
-        boolean handled = false;
+        double damage = event.getFinalDamage();
+        if (damage <= 0) return;
 
-        if (event.getCause() == EntityDamageEvent.DamageCause.CONTACT) {
-            Location loc = player.getLocation();
-            World world = loc.getWorld();
-            if (world == null) return;
+        PlayerStatisticsEnum specificDamageType = getSpecificDamageType(event, player);
 
-            // Check surrounding blocks to see if touching cactus or berry bush
-            for (BlockFace face : BlockFace.values()) {
-                Block relative = player.getLocation().getBlock().getRelative(face);
-
-                switch (relative.getType()) {
-                    case CACTUS:
-                        playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.TOTAL_CACTUS_DAMAGE, event.getFinalDamage());
-                        handled = true;
-                        break;
-
-                    case SWEET_BERRY_BUSH:
-                        playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.TOTAL_BERRY_BUSH_DAMAGE, event.getFinalDamage());
-                        handled = true;
-                        break;
-
-                    default:
-                        break;
-                }
-            }
+        if (specificDamageType == null) {
+            playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.TOTAL_DAMAGE_RECEIVED, damage);
+            return;
         }
 
-        if (!handled)
-            playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.TOTAL_DAMAGE_RECEIVED, event.getFinalDamage());
+        playerStatisticsManager.incrementStatistic(player.getUniqueId(), specificDamageType, damage);
     }
 
     /**
@@ -77,12 +65,43 @@ public class EntityDamageListener implements Listener {
      *
      * @param event The entity damage by entity event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerDamageGiven(EntityDamageByEntityEvent event) {
+        double damage = event.getFinalDamage();
+        if (damage <= 0) return;
+
         Player damager = getPlayerFromDamageSource(event);
         if (damager == null) return;
 
-        playerStatisticsManager.incrementStatistic(damager.getUniqueId(), PlayerStatisticsEnum.TOTAL_DAMAGE_GIVEN, event.getFinalDamage());
+        playerStatisticsManager.incrementStatistic(damager.getUniqueId(), PlayerStatisticsEnum.TOTAL_DAMAGE_GIVEN, damage);
+    }
+
+    /**
+     * Gets the specific damage type for contact damage.
+     *
+     * @param event  The entity damage event.
+     * @param player The player taking damage.
+     * @return The damage type, or null if not found.
+     */
+    private PlayerStatisticsEnum getSpecificDamageType(EntityDamageEvent event, Player player) {
+        if (event.getCause() != EntityDamageEvent.DamageCause.CONTACT) return null;
+
+        Block playerBlock = player.getLocation().getBlock();
+
+        for (BlockFace face : ADJACENT_FACES) {
+            Material blockType = playerBlock.getRelative(face).getType();
+
+            switch (blockType) {
+                case CACTUS -> {
+                    return PlayerStatisticsEnum.TOTAL_CACTUS_DAMAGE;
+                }
+                case SWEET_BERRY_BUSH -> {
+                    return PlayerStatisticsEnum.TOTAL_BERRY_BUSH_DAMAGE;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -113,18 +132,18 @@ public class EntityDamageListener implements Listener {
             return null;
         }
 
-        // Firework damage
-        if (damager instanceof Firework firework) {
-            ProjectileSource shooter = firework.getShooter();
-            if (shooter instanceof Player) return (Player) shooter;
-
-            return null;
-        }
-
         // Area Effect Cloud damage
         if (damager instanceof AreaEffectCloud cloud) {
             ProjectileSource source = cloud.getSource();
             if (source instanceof Player) return (Player) source;
+
+            return null;
+        }
+
+        // Firework damage
+        if (damager instanceof Firework firework) {
+            ProjectileSource shooter = firework.getShooter();
+            if (shooter instanceof Player) return (Player) shooter;
 
             return null;
         }
