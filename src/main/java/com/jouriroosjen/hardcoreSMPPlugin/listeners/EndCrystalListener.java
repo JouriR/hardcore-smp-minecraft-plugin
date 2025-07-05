@@ -4,10 +4,8 @@ import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
 import com.jouriroosjen.hardcoreSMPPlugin.utils.BlockUtil;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.EnderCrystal;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
+import org.bukkit.Location;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -25,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Handles end crystal explosion tracking.
  *
  * @author Jouri Roosjen
- * @version 2.0.0
+ * @version 2.1.0
  */
 public class EndCrystalListener implements Listener {
     private final JavaPlugin plugin;
@@ -35,6 +33,7 @@ public class EndCrystalListener implements Listener {
 
     private static final long DAMAGE_TIMEOUT = 5000L; // 5 seconds
     private static final long CLEANUP_INTERVAL = 10000L; // 10 seconds
+    private static final double EXPLOSION_RADIUS = 12.0;
 
     /**
      * Represents crystal damage data.
@@ -97,12 +96,27 @@ public class EndCrystalListener implements Listener {
         CrystalDamageData damageData = crystalDamagers.remove(crystalUuid);
 
         if (damageData == null || damageData.isExpired(System.currentTimeMillis())) return;
-        if (event.blockList().isEmpty()) return;
 
-        long destroyedBlocksCount = BlockUtil.countExplodableBlocks(event.blockList());
+        // Update blocks destroyed statistic
+        if (!event.blockList().isEmpty()) {
+            long destroyedBlocksCount = BlockUtil.countExplodableBlocks(event.blockList());
 
-        if (destroyedBlocksCount > 0)
-            playerStatisticsManager.incrementStatistic(damageData.playerUuid(), PlayerStatisticsEnum.BLOCKS_DESTROYED, destroyedBlocksCount);
+            if (destroyedBlocksCount > 0)
+                playerStatisticsManager.incrementStatistic(damageData.playerUuid(), PlayerStatisticsEnum.BLOCKS_DESTROYED, destroyedBlocksCount);
+        }
+
+        Location explosionLocation = event.getLocation();
+
+        // Update the total damage given statistic
+        for (Entity entity : explosionLocation.getWorld().getNearbyEntities(explosionLocation, EXPLOSION_RADIUS, EXPLOSION_RADIUS, EXPLOSION_RADIUS)) {
+            if (entity instanceof LivingEntity && entity.getUniqueId() != crystalUuid) {
+                double distance = entity.getLocation().distance(explosionLocation);
+                double damage = calculateCrystalDamage(distance);
+
+                if (damage > 0)
+                    playerStatisticsManager.incrementStatistic(damageData.playerUuid(), PlayerStatisticsEnum.TOTAL_DAMAGE_GIVEN, damage);
+            }
+        }
     }
 
     /**
@@ -122,6 +136,20 @@ public class EndCrystalListener implements Listener {
         }
 
         return null;
+    }
+
+    /**
+     * Calculate the amount of damage done to an entity.
+     *
+     * @param distance The distance between the entity and the explosion.
+     * @return The amount of damage done.
+     */
+    private double calculateCrystalDamage(double distance) {
+        if (distance > EXPLOSION_RADIUS) return 0;
+
+        double maxDamage = 12.0;
+        double damageReduction = distance / 12.0;
+        return Math.max(0, maxDamage * (1.0 - damageReduction));
     }
 
     /**
