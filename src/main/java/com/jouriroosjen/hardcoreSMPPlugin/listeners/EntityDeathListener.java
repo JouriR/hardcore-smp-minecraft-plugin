@@ -17,7 +17,7 @@ import java.util.Set;
  * Handles entity death events
  *
  * @author Jouri Roosjen
- * @version 2.0.0
+ * @version 2.1.0
  */
 public class EntityDeathListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
