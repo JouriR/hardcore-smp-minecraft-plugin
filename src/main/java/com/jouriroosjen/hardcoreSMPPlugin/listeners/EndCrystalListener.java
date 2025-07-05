@@ -10,6 +10,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.projectiles.ProjectileSource;
@@ -23,15 +24,17 @@ import java.util.concurrent.ConcurrentHashMap;
  * Handles end crystal explosion tracking.
  *
  * @author Jouri Roosjen
- * @version 2.1.0
+ * @version 2.2.0
  */
 public class EndCrystalListener implements Listener {
     private final JavaPlugin plugin;
     private final PlayerStatisticsManager playerStatisticsManager;
 
     private final Map<UUID, CrystalDamageData> crystalDamagers = new ConcurrentHashMap<>();
+    private final Map<UUID, CrystalExplosionData> recentExplosions = new ConcurrentHashMap<>();
 
     private static final long DAMAGE_TIMEOUT = 5000L; // 5 seconds
+    private static final long EXPLOSION_TIMEOUT = 2000L; // 2 seconds
     private static final long CLEANUP_INTERVAL = 10000L; // 10 seconds
     private static final double EXPLOSION_RADIUS = 12.0;
 
@@ -50,6 +53,38 @@ public class EndCrystalListener implements Listener {
          */
         boolean isExpired(long currentTime) {
             return currentTime - timestamp > DAMAGE_TIMEOUT;
+        }
+    }
+
+    /**
+     * Represents crystal explosion data for tracking kills.
+     *
+     * @param playerUuid The unique ID of the player who caused the explosion.
+     * @param location   The location of the explosion.
+     * @param timestamp  The timestamp when the explosion occurred.
+     */
+    private record CrystalExplosionData(UUID playerUuid, Location location, long timestamp) {
+        /**
+         * Checks if the explosion data is expired or not.
+         *
+         * @param currentTime The current timestamp.
+         * @return True if the explosion is expired, otherwise false.
+         */
+        boolean isExpired(long currentTime) {
+            return currentTime - timestamp > EXPLOSION_TIMEOUT;
+        }
+
+        /**
+         * Checks if a location is within the explosion radius.
+         *
+         * @param targetLocation The location to check.
+         * @return True if within explosion radius, otherwise false.
+         */
+        boolean isWithinRadius(Location targetLocation) {
+            if (!location.getWorld().equals(targetLocation.getWorld())) {
+                return false;
+            }
+            return location.distance(targetLocation) <= EXPLOSION_RADIUS;
         }
     }
 
@@ -97,6 +132,12 @@ public class EndCrystalListener implements Listener {
 
         if (damageData == null || damageData.isExpired(System.currentTimeMillis())) return;
 
+        Location explosionLocation = event.getLocation();
+        long currentTime = System.currentTimeMillis();
+
+        CrystalExplosionData explosionData = new CrystalExplosionData(damageData.playerUuid(), explosionLocation.clone(), currentTime);
+        recentExplosions.put(damageData.playerUuid(), explosionData);
+
         // Update blocks destroyed statistic
         if (!event.blockList().isEmpty()) {
             long destroyedBlocksCount = BlockUtil.countExplodableBlocks(event.blockList());
@@ -104,8 +145,6 @@ public class EndCrystalListener implements Listener {
             if (destroyedBlocksCount > 0)
                 playerStatisticsManager.incrementStatistic(damageData.playerUuid(), PlayerStatisticsEnum.BLOCKS_DESTROYED, destroyedBlocksCount);
         }
-
-        Location explosionLocation = event.getLocation();
 
         // Update the total damage given statistic
         for (Entity entity : explosionLocation.getWorld().getNearbyEntities(explosionLocation, EXPLOSION_RADIUS, EXPLOSION_RADIUS, EXPLOSION_RADIUS)) {
@@ -117,6 +156,46 @@ public class EndCrystalListener implements Listener {
                     playerStatisticsManager.incrementStatistic(damageData.playerUuid(), PlayerStatisticsEnum.TOTAL_DAMAGE_GIVEN, damage);
             }
         }
+    }
+
+    /**
+     * Event handler for entity death events to track crystal kills.
+     *
+     * @param event The entity death event.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onEntityDeath(EntityDeathEvent event) {
+        LivingEntity entity = event.getEntity();
+        if (!(entity instanceof Player)) return;
+
+        // Check if this death was caused by a recent crystal explosion
+        Player responsiblePlayer = findCrystalKiller(entity);
+        if (responsiblePlayer == null) return;
+
+        // Track the player kill
+        playerStatisticsManager.incrementStatistic(responsiblePlayer.getUniqueId(), PlayerStatisticsEnum.PLAYERS_KILLED, 1);
+    }
+
+    /**
+     * Finds the player responsible for a crystal kill.
+     *
+     * @param deadEntity The entity that died.
+     * @return The player who caused the crystal explosion, or null if not found.
+     */
+    private Player findCrystalKiller(LivingEntity deadEntity) {
+        Location deathLocation = deadEntity.getLocation();
+        long currentTime = System.currentTimeMillis();
+
+        for (CrystalExplosionData explosionData : recentExplosions.values()) {
+            if (explosionData.isExpired(currentTime)) continue;
+
+            if (explosionData.isWithinRadius(deathLocation)) {
+                Player player = Bukkit.getPlayer(explosionData.playerUuid());
+                if (player != null) return player;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -163,6 +242,14 @@ public class EndCrystalListener implements Listener {
             while (iterator.hasNext()) {
                 Map.Entry<UUID, CrystalDamageData> entry = iterator.next();
                 if (entry.getValue().isExpired(currentTime)) iterator.remove();
+            }
+
+            Iterator<Map.Entry<UUID, CrystalExplosionData>> explosionIterator = recentExplosions.entrySet().iterator();
+            while (explosionIterator.hasNext()) {
+                Map.Entry<UUID, CrystalExplosionData> entry = explosionIterator.next();
+                if (entry.getValue().isExpired(currentTime)) {
+                    explosionIterator.remove();
+                }
             }
         }, CLEANUP_INTERVAL / 50, CLEANUP_INTERVAL / 50);
     }
