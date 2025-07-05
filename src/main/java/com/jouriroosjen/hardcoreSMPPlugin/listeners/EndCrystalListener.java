@@ -145,7 +145,7 @@ public class EndCrystalListener implements Listener {
             if (destroyedBlocksCount > 0)
                 playerStatisticsManager.incrementStatistic(damageData.playerUuid(), PlayerStatisticsEnum.BLOCKS_DESTROYED, destroyedBlocksCount);
         }
-        
+
         // Update the total damage given statistic
         for (Entity entity : explosionLocation.getWorld().getNearbyEntities(explosionLocation, EXPLOSION_RADIUS, EXPLOSION_RADIUS, EXPLOSION_RADIUS)) {
             if (entity instanceof LivingEntity && entity.getUniqueId() != crystalUuid) {
@@ -242,6 +242,14 @@ public class EndCrystalListener implements Listener {
             while (iterator.hasNext()) {
                 Map.Entry<UUID, CrystalDamageData> entry = iterator.next();
                 if (entry.getValue().isExpired(currentTime)) iterator.remove();
+            }
+
+            Iterator<Map.Entry<UUID, CrystalExplosionData>> explosionIterator = recentExplosions.entrySet().iterator();
+            while (explosionIterator.hasNext()) {
+                Map.Entry<UUID, CrystalExplosionData> entry = explosionIterator.next();
+                if (entry.getValue().isExpired(currentTime)) {
+                    explosionIterator.remove();
+                }
             }
         }, CLEANUP_INTERVAL / 50, CLEANUP_INTERVAL / 50);
     }
