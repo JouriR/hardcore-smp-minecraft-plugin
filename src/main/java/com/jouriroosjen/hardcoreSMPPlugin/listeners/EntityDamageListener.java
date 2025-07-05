@@ -2,23 +2,16 @@ package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 
 import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.projectiles.ProjectileSource;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * Handles entity damage events
@@ -28,8 +21,6 @@ import java.util.UUID;
  */
 public class EntityDamageListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
-
-    private final Map<Location, UUID> respawnAnchorExplosions = new HashMap<>();
 
     /**
      * Constructs a new {@code EntityDamageListener} instance.
@@ -92,40 +83,6 @@ public class EntityDamageListener implements Listener {
         if (damager == null) return;
 
         playerStatisticsManager.incrementStatistic(damager.getUniqueId(), PlayerStatisticsEnum.TOTAL_DAMAGE_GIVEN, event.getFinalDamage());
-    }
-
-    /**
-     * Event handler to track when a player places a respawn anchor.
-     *
-     * @param event The block place event.
-     */
-    @EventHandler
-    public void onRespawnAnchorPlace(BlockPlaceEvent event) {
-        if (event.getBlock().getType() != Material.RESPAWN_ANCHOR) return;
-        respawnAnchorExplosions.put(event.getBlock().getLocation(), event.getPlayer().getUniqueId());
-    }
-
-    /**
-     * Event handler for respawn anchor explosions in wrong dimension.
-     *
-     * @param event The entity damage event.
-     */
-    @EventHandler
-    public void onRespawnAnchorExplosion(EntityDamageEvent event) {
-        if (event.getCause() != EntityDamageEvent.DamageCause.BLOCK_EXPLOSION) return;
-
-        Location damageLoc = event.getEntity().getLocation();
-        for (Map.Entry<Location, UUID> entry : respawnAnchorExplosions.entrySet()) {
-            if (entry.getKey().getWorld().equals(damageLoc.getWorld()) &&
-                    entry.getKey().distance(damageLoc) <= 8.0) {
-                Player placer = Bukkit.getPlayer(entry.getValue());
-
-                if (placer != null)
-                    playerStatisticsManager.incrementStatistic(entry.getValue(), PlayerStatisticsEnum.TOTAL_DAMAGE_GIVEN, event.getFinalDamage());
-
-                break;
-            }
-        }
     }
 
     /**

@@ -147,8 +147,8 @@ public class EndCrystalListener implements Listener {
     private double calculateCrystalDamage(double distance) {
         if (distance > EXPLOSION_RADIUS) return 0;
 
-        double maxDamage = 12.0;
-        double damageReduction = distance / 12.0;
+        double maxDamage = 99.0;
+        double damageReduction = distance / EXPLOSION_RADIUS;
         return Math.max(0, maxDamage * (1.0 - damageReduction));
     }
 
