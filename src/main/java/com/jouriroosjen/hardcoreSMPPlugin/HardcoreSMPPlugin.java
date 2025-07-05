@@ -26,7 +26,7 @@ import java.sql.SQLException;
  * </p>
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.1.1
  */
 public final class HardcoreSMPPlugin extends JavaPlugin {
     private DatabaseManager databaseManager;
@@ -34,6 +34,8 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
     private HologramManager hologramManager;
     private PlayerStatisticsManager playerStatisticsManager;
     private PlaytimeManager playtimeManager;
+
+    private PlayerJumpListener playerJumpListener;
 
     /**
      * Called when the plugin is enabled.
@@ -68,18 +70,19 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         playtimeManager = new PlaytimeManager(this, databaseManager.connection);
 
         // Register event listeners
+        playerJumpListener = new PlayerJumpListener(this, playerStatisticsManager);
+
         getServer().getPluginManager().registerEvents(new BlockBreakListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new BlockExplodeListener(this, playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new BlockPlaceListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new CreeperIgniteListener(this, playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new EnchantItemListener(playerStatisticsManager), this);
-        getServer().getPluginManager().registerEvents(new EndCrystalListener(playerStatisticsManager), this);
+        getServer().getPluginManager().registerEvents(new EndCrystalListener(this, playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new EndermanAttackPlayerListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new EntityBreedListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new EntityDamageListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new EntityDeathListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new EntityExplodeListener(playerStatisticsManager), this);
-        getServer().getPluginManager().registerEvents(new InventoryClickListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerAdvancementDoneListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerAnimationListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerBedEnterListener(playerStatisticsManager), this);
@@ -90,7 +93,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerItemConsumeListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerItemDamageListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(this, databaseManager.connection, playtimeManager), this);
-        getServer().getPluginManager().registerEvents(new PlayerJumpListener(playerStatisticsManager), this);
+        getServer().getPluginManager().registerEvents(playerJumpListener, this);
         getServer().getPluginManager().registerEvents(new PlayerKickListener(playtimeManager, playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerMoveListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerQuitListener(playtimeManager), this);
@@ -128,9 +131,11 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         // Clear managers
         buybackManager.clear();
         hologramManager.destroy();
+        playerJumpListener.flushAllPendingJumps();
         playtimeManager.stopAllSessions();
         playtimeManager.stopPlaytimeTracker();
         playtimeManager.stopPlaytimeBackupsTask();
+        playerStatisticsManager.shutdown();
 
         // Close database connection
         try {

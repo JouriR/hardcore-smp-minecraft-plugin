@@ -2,8 +2,8 @@ package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 
 import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 
@@ -11,7 +11,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
  * Handles block place events.
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.0.1
  */
 public class BlockPlaceListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
@@ -30,12 +30,8 @@ public class BlockPlaceListener implements Listener {
      *
      * @param event The block place event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
-        Player player = event.getPlayer();
-
-        if (!event.canBuild()) return;
-        
-        playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.BLOCKS_PLACED, 1);
+        playerStatisticsManager.incrementStatistic(event.getPlayer().getUniqueId(), PlayerStatisticsEnum.BLOCKS_PLACED, 1);
     }
 }

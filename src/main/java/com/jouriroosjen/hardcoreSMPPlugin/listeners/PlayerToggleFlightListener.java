@@ -4,6 +4,7 @@ import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 
@@ -11,7 +12,7 @@ import org.bukkit.event.player.PlayerToggleFlightEvent;
  * Handles player toggle flight events.
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.0.1
  */
 public class PlayerToggleFlightListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
@@ -30,12 +31,11 @@ public class PlayerToggleFlightListener implements Listener {
      *
      * @param event The player toggle flight event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerToggleFlight(PlayerToggleFlightEvent event) {
         Player player = event.getPlayer();
 
-        if (!event.isFlying()) {
+        if (!event.isFlying())
             playerStatisticsManager.incrementStatistic(player.getUniqueId(), PlayerStatisticsEnum.FLIGHTS, 1);
-        }
     }
 }

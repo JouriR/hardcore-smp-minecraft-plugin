@@ -3,11 +3,13 @@ package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 import com.destroystokyo.paper.event.entity.CreeperIgniteEvent;
 import com.jouriroosjen.hardcoreSMPPlugin.enums.PlayerStatisticsEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
+import com.jouriroosjen.hardcoreSMPPlugin.utils.BlockUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
@@ -15,27 +17,65 @@ import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Handles creeper ignite events.
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 2.0.0
  */
 public class CreeperIgniteListener implements Listener {
     private final JavaPlugin plugin;
     private final PlayerStatisticsManager playerStatisticsManager;
 
-    private final Map<UUID, UUID> creeperIgnitedBy = new HashMap<>();
-    private final Map<UUID, Long> recentFlintAndSteelUse = new HashMap<>();
-    private final Map<UUID, UUID> creeperTargeting = new HashMap<>();
+    private final Map<UUID, IgnitionData> creeperIgnitionMap = new ConcurrentHashMap<>();
 
-    private static final long INTERACTION_TIMEOUT = 3000; // 3 seconds
+    private static final long INTERACTION_TIMEOUT = 3000L; // 3 seconds
+    private static final long CLEANUP_INTERVAL = 10000L; // 10 seconds
+    private static final double MAX_IGNITION_DISTANCE = 8.0;
+
+    /**
+     * Enum for different ignition causes.
+     */
+    private enum IgnitionCause {
+        FLINT_AND_STEEL,
+        PROXIMITY,
+        TARGETING
+    }
+
+    /**
+     * Represents creeper ignition data.
+     *
+     * @param playerUuid The unique ID of the player that caused the ignition.
+     * @param cause      The ignition cause.
+     * @param timestamp  The timestamp when this ignition occurred.
+     */
+    private record IgnitionData(UUID playerUuid, IgnitionCause cause, long timestamp) {
+        /**
+         * Constructs a new {@code IgnitionData} instance.
+         *
+         * @param playerUuid The unique ID of the player that caused the ignition.
+         * @param cause      The ignition cause.
+         */
+        private IgnitionData(UUID playerUuid, IgnitionCause cause) {
+            this(playerUuid, cause, System.currentTimeMillis());
+        }
+
+        /**
+         * Checks if an interaction is expired or not.
+         *
+         * @param currentTime The current timestamp.
+         * @return True if the interaction is expired, otherwise false.
+         */
+        boolean isExpired(long currentTime) {
+            return currentTime - timestamp > INTERACTION_TIMEOUT;
+        }
+    }
 
     /**
      * Constructs a new {@code CreeperIgniteListener} instance.
@@ -47,8 +87,8 @@ public class CreeperIgniteListener implements Listener {
         this.playerStatisticsManager = playerStatisticsManager;
         this.plugin = plugin;
 
-        // Start a repeating task to check for ignited creepers
-        startCreeperCheckTask();
+        // Start periodic cleanup task
+        startPeriodicCleanup();
     }
 
     /**
@@ -56,16 +96,17 @@ public class CreeperIgniteListener implements Listener {
      *
      * @param event The player interact entity event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
         if (!(event.getRightClicked() instanceof Creeper creeper)) return;
 
         ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
-        if (item.getType() == Material.FLINT_AND_STEEL) {
-            // Player used flint and steel on creeper
-            creeperIgnitedBy.put(creeper.getUniqueId(), event.getPlayer().getUniqueId());
-            recentFlintAndSteelUse.put(creeper.getUniqueId(), System.currentTimeMillis());
-        }
+        if (item.getType() != Material.FLINT_AND_STEEL) return;
+
+        // Store flint and steel ignition
+        UUID playerUuid = event.getPlayer().getUniqueId();
+        IgnitionData ignitionData = new IgnitionData(playerUuid, IgnitionCause.FLINT_AND_STEEL);
+        creeperIgnitionMap.put(creeper.getUniqueId(), ignitionData);
     }
 
     /**
@@ -73,24 +114,18 @@ public class CreeperIgniteListener implements Listener {
      *
      * @param event The creeper ignite event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onCreeperIgnite(CreeperIgniteEvent event) {
         Creeper creeper = event.getEntity();
+        UUID creeperUuid = creeper.getUniqueId();
 
-        if (!creeperIgnitedBy.containsKey(creeper.getUniqueId())) {
-            // Find the closest player for any other ignition causes
-            Player closestPlayer = creeper.getWorld().getPlayers().stream()
-                    .filter(player -> player.getLocation().distance(creeper.getLocation()) <= 8.0)
-                    .min((p1, p2) -> Double.compare(
-                            p1.getLocation().distance(creeper.getLocation()),
-                            p2.getLocation().distance(creeper.getLocation())
-                    ))
-                    .orElse(null);
+        if (creeperIgnitionMap.containsKey(creeperUuid)) return;
 
-            if (closestPlayer != null) {
-                creeperIgnitedBy.put(creeper.getUniqueId(), closestPlayer.getUniqueId());
-            }
-        }
+        Player closetsPlayer = findClosestPlayer(creeper);
+        if (closetsPlayer == null) return;
+
+        IgnitionData ignitionData = new IgnitionData(closetsPlayer.getUniqueId(), IgnitionCause.PROXIMITY);
+        creeperIgnitionMap.put(creeperUuid, ignitionData);
     }
 
     /**
@@ -98,50 +133,16 @@ public class CreeperIgniteListener implements Listener {
      *
      * @param event The entity target event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityTarget(EntityTargetEvent event) {
         if (!(event.getEntity() instanceof Creeper creeper)) return;
         if (!(event.getTarget() instanceof Player player)) return;
 
-        creeperTargeting.put(creeper.getUniqueId(), player.getUniqueId());
-    }
+        UUID creeperUuid = creeper.getUniqueId();
+        if (creeperIgnitionMap.containsKey(creeperUuid)) return;
 
-    /**
-     * Starts a repeating task to check for ignited creepers.
-     */
-    private void startCreeperCheckTask() {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                // Check all tracked creepers to see if they've started igniting
-                creeperTargeting.entrySet().removeIf(entry -> {
-                    UUID creeperUuid = entry.getKey();
-                    UUID playerUuid = entry.getValue();
-
-                    // Find the creeper entity
-                    Creeper creeper = null;
-                    for (org.bukkit.World world : Bukkit.getWorlds()) {
-                        for (org.bukkit.entity.Entity entity : world.getEntities()) {
-                            if (entity.getUniqueId().equals(creeperUuid) && entity instanceof Creeper) {
-                                creeper = (Creeper) entity;
-                                break;
-                            }
-                        }
-                        if (creeper != null) break;
-                    }
-
-                    if (creeper == null) return true;
-
-                    // Check if creeper is ignited (fuse time > 0)
-                    if (creeper.getFuseTicks() > 0) {
-                        creeperIgnitedBy.put(creeperUuid, playerUuid);
-                        return true;
-                    }
-
-                    return false;
-                });
-            }
-        }.runTaskTimer(plugin, 0L, 2L); // Run every 2 ticks (0.1 seconds)
+        IgnitionData ignitionData = new IgnitionData(player.getUniqueId(), IgnitionCause.TARGETING);
+        creeperIgnitionMap.put(creeperUuid, ignitionData);
     }
 
     /**
@@ -149,36 +150,24 @@ public class CreeperIgniteListener implements Listener {
      *
      * @param event The entity explode event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent event) {
         if (!(event.getEntity() instanceof Creeper creeper)) return;
 
-        UUID playerUuid = creeperIgnitedBy.get(creeper.getUniqueId());
+        UUID creeperUuid = creeper.getUniqueId();
+        IgnitionData ignitionData = creeperIgnitionMap.remove(creeperUuid);
+        if (ignitionData == null || ignitionData.isExpired(System.currentTimeMillis())) return;
 
-        if (playerUuid == null) return;
-
-        Player responsiblePlayer = Bukkit.getPlayer(playerUuid);
-
+        Player responsiblePlayer = Bukkit.getPlayer(ignitionData.playerUuid);
         if (responsiblePlayer == null) return;
 
-        long destroyedBlocksCount = event.blockList().stream()
-                .filter(block -> {
-                    Material type = block.getType();
-                    return type.isSolid() &&
-                            type != Material.BEDROCK &&
-                            type != Material.OBSIDIAN &&
-                            !type.name().contains("AIR") &&
-                            !type.name().contains("FIRE");
-                })
-                .count();
+        long destroyedBlocksCount = BlockUtil.countExplodableBlocks(event.blockList());
 
-        playerStatisticsManager.incrementStatistic(responsiblePlayer.getUniqueId(), PlayerStatisticsEnum.CREEPERS_IGNITED, 1);
-        playerStatisticsManager.incrementStatistic(responsiblePlayer.getUniqueId(), PlayerStatisticsEnum.BLOCKS_DESTROYED, destroyedBlocksCount);
+        UUID playerUuid = responsiblePlayer.getUniqueId();
+        playerStatisticsManager.incrementStatistic(playerUuid, PlayerStatisticsEnum.CREEPERS_IGNITED, 1);
 
-        // Clean up tracking data
-        creeperIgnitedBy.remove(creeper.getUniqueId());
-        recentFlintAndSteelUse.remove(creeper.getUniqueId());
-        creeperTargeting.remove(creeper.getUniqueId());
+        if (destroyedBlocksCount > 0)
+            playerStatisticsManager.incrementStatistic(playerUuid, PlayerStatisticsEnum.BLOCKS_DESTROYED, destroyedBlocksCount);
     }
 
     /**
@@ -186,13 +175,44 @@ public class CreeperIgniteListener implements Listener {
      *
      * @param event The entity death event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityDeath(EntityDeathEvent event) {
-        if (event.getEntity() instanceof Creeper creeper) {
-            // Clean up if creeper dies without exploding
-            creeperIgnitedBy.remove(creeper.getUniqueId());
-            recentFlintAndSteelUse.remove(creeper.getUniqueId());
-            creeperTargeting.remove(creeper.getUniqueId());
+        if (!(event.getEntity() instanceof Creeper creeper)) return;
+        creeperIgnitionMap.remove(creeper.getUniqueId());
+    }
+
+    /**
+     * Find the closest player to the given creeper.
+     *
+     * @param creeper The creeper.
+     * @return The closest player, otherwise null if not found.
+     */
+    private Player findClosestPlayer(Creeper creeper) {
+        Player closestPlayer = null;
+        double closestDistance = MAX_IGNITION_DISTANCE;
+
+        for (Player player : creeper.getWorld().getPlayers()) {
+            double distance = player.getLocation().distance(creeper.getLocation());
+            if (distance <= closestDistance) {
+                closestPlayer = player;
+                closestDistance = distance;
+            }
         }
+
+        return closestPlayer;
+    }
+
+    /**
+     * Start periodic cleanup to remove expired ignition data.
+     */
+    private void startPeriodicCleanup() {
+        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
+            Iterator<Map.Entry<UUID, IgnitionData>> iterator = creeperIgnitionMap.entrySet().iterator();
+
+            while (iterator.hasNext()) {
+                Map.Entry<UUID, IgnitionData> entry = iterator.next();
+                if (entry.getValue().isExpired(System.currentTimeMillis())) iterator.remove();
+            }
+        }, CLEANUP_INTERVAL / 50, CLEANUP_INTERVAL / 50);
     }
 }

@@ -1,8 +1,8 @@
 package com.jouriroosjen.hardcoreSMPPlugin.listeners;
 
 import com.jouriroosjen.hardcoreSMPPlugin.managers.PlaytimeManager;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 
@@ -12,7 +12,7 @@ import java.util.UUID;
  * Handles player quit events.
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.0.1
  */
 public class PlayerQuitListener implements Listener {
     private final PlaytimeManager playtimeManager;
@@ -31,10 +31,9 @@ public class PlayerQuitListener implements Listener {
      *
      * @param event The player quit event.
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerQuit(PlayerQuitEvent event) {
-        Player player = event.getPlayer();
-        UUID playerUuid = player.getUniqueId();
+        UUID playerUuid = event.getPlayer().getUniqueId();
 
         playtimeManager.stopSession(playerUuid);
     }
