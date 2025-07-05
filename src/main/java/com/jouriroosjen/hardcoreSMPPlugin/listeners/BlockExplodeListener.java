@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Handles block explode events.
  *
  * @author Jouri Roosjen
- * @version 2.0.0
+ * @version 2.1.0
  */
 public class BlockExplodeListener implements Listener {
     private final JavaPlugin plugin;
