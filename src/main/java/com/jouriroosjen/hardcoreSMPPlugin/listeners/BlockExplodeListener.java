@@ -8,6 +8,8 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -24,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Handles block explode events.
  *
  * @author Jouri Roosjen
- * @version 2.0.0
+ * @version 2.1.0
  */
 public class BlockExplodeListener implements Listener {
     private final JavaPlugin plugin;
@@ -34,6 +36,7 @@ public class BlockExplodeListener implements Listener {
 
     private static final long BED_INTERACTION_TIMEOUT = 5000L; // 5 seconds
     private static final long CLEANUP_INTERVAL = 10000L; // 10 seconds
+    private static final double EXPLOSION_RADIUS = 8.0;
 
     private static final Set<World.Environment> DANGEROUS_ENVIRONMENTS = EnumSet.of(
             World.Environment.NETHER,
@@ -95,6 +98,18 @@ public class BlockExplodeListener implements Listener {
 
         if (destroyedBlocksCount > 0)
             playerStatisticsManager.incrementStatistic(playerUuid, PlayerStatisticsEnum.BLOCKS_DESTROYED, destroyedBlocksCount);
+
+        Location explosionLocation = explodedBlock.getLocation();
+
+        for (Entity entity : explosionLocation.getWorld().getNearbyEntities(explosionLocation, EXPLOSION_RADIUS, EXPLOSION_RADIUS, EXPLOSION_RADIUS)) {
+            if (entity instanceof LivingEntity) {
+                double distance = entity.getLocation().distance(explosionLocation);
+                double damage = calculateAnchorDamage(distance);
+
+                if (damage > 0)
+                    playerStatisticsManager.incrementStatistic(playerUuid, PlayerStatisticsEnum.TOTAL_DAMAGE_GIVEN, damage);
+            }
+        }
     }
 
     /**
@@ -191,6 +206,20 @@ public class BlockExplodeListener implements Listener {
         }
 
         return null;
+    }
+
+    /**
+     * Calculate the explosion damage.
+     *
+     * @param distance The distance between the entity and the explosion.
+     * @return The amount of damage done by the explosion.
+     */
+    private double calculateAnchorDamage(double distance) {
+        if (distance > EXPLOSION_RADIUS) return 0;
+
+        double maxDamage = 71.0;
+        double damageReduction = distance / EXPLOSION_RADIUS;
+        return Math.max(0, maxDamage * (1.0 - damageReduction));
     }
 
     /**
