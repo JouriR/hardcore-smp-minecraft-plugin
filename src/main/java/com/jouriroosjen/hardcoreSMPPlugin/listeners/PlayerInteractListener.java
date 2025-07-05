@@ -12,39 +12,27 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Handles player interact events.
  *
  * @author Jouri Roosjen
- * @version 2.0.0
+ * @version 2.0.1
  */
 public class PlayerInteractListener implements Listener {
     private final PlayerStatisticsManager playerStatisticsManager;
 
     private static final Map<Material, PlayerStatisticsEnum> MATERIAL_TO_STATISTIC = new EnumMap<>(Material.class);
 
-    private static final Set<Material> CHEST_MATERIALS = EnumSet.of(
-            Material.CHEST, Material.ENDER_CHEST, Material.CHEST_MINECART,
-            Material.ACACIA_CHEST_BOAT, Material.BIRCH_CHEST_BOAT, Material.CHERRY_CHEST_BOAT,
-            Material.DARK_OAK_CHEST_BOAT, Material.JUNGLE_CHEST_BOAT, Material.MANGROVE_CHEST_BOAT,
-            Material.OAK_CHEST_BOAT, Material.PALE_OAK_CHEST_BOAT, Material.SPRUCE_CHEST_BOAT
-    );
-
     static {
         MATERIAL_TO_STATISTIC.put(Material.CAKE, PlayerStatisticsEnum.CAKE_CONSUMED);
+
+        MATERIAL_TO_STATISTIC.put(Material.CHEST, PlayerStatisticsEnum.CHEST_OPENED);
+        MATERIAL_TO_STATISTIC.put(Material.ENDER_CHEST, PlayerStatisticsEnum.CHEST_OPENED);
         MATERIAL_TO_STATISTIC.put(Material.TRAPPED_CHEST, PlayerStatisticsEnum.TRAPPED_CHEST_OPENED);
         MATERIAL_TO_STATISTIC.put(Material.BARREL, PlayerStatisticsEnum.BARREL_OPENED);
 
-        // Add all chest materials
-        for (Material chest : CHEST_MATERIALS) {
-            MATERIAL_TO_STATISTIC.put(chest, PlayerStatisticsEnum.CHEST_OPENED);
-        }
-
-        // Add all shulker box materials
         for (Material shulkerBox : Tag.SHULKER_BOXES.getValues()) {
             MATERIAL_TO_STATISTIC.put(shulkerBox, PlayerStatisticsEnum.SHULKER_BOX_OPENED);
         }

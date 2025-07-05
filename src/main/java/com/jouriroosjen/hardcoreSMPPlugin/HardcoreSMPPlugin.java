@@ -26,7 +26,7 @@ import java.sql.SQLException;
  * </p>
  *
  * @author Jouri Roosjen
- * @version 1.1.1
+ * @version 1.2.0
  */
 public final class HardcoreSMPPlugin extends JavaPlugin {
     private DatabaseManager databaseManager;
@@ -89,6 +89,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerEggThrowListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerExpChangeListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerFishListener(playerStatisticsManager), this);
+        getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerItemConsumeListener(playerStatisticsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerItemDamageListener(playerStatisticsManager), this);
