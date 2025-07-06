@@ -13,15 +13,15 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manages player playtime sessions and persists playtime data to the database.
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.1.0
  */
 public class PlaytimeManager {
     private final JavaPlugin plugin;
@@ -29,7 +29,10 @@ public class PlaytimeManager {
     private final BukkitTask playtimeTracker;
     private final BukkitTask playtimeBackupsTask;
 
-    private final Map<UUID, Long> sessionStartTimes = new HashMap<>();
+    private final Map<UUID, SessionData> sessionTimes = new ConcurrentHashMap<>();
+
+    private record SessionData(Long originalStartTime, Long lastSaveTime) {
+    }
 
     /**
      * Constructs a new {@code PlaytimeManager} instance.
@@ -51,14 +54,17 @@ public class PlaytimeManager {
      * @param uuid The UUID of the player
      */
     public void startSession(UUID uuid) {
-        sessionStartTimes.put(uuid, System.currentTimeMillis());
+        Long now = System.currentTimeMillis();
+        SessionData sessionData = new SessionData(now, now);
+
+        sessionTimes.put(uuid, sessionData);
     }
 
     /**
      * Stops and clears all active player sessions.
      */
     public void stopAllSessions() {
-        for (Map.Entry<UUID, Long> entry : sessionStartTimes.entrySet()) {
+        for (Map.Entry<UUID, SessionData> entry : sessionTimes.entrySet()) {
             stopSession(entry.getKey());
         }
     }
@@ -69,15 +75,16 @@ public class PlaytimeManager {
      * @param uuid The UUID of the player
      */
     public void stopSession(UUID uuid) {
-        Long startTime = sessionStartTimes.remove(uuid);
-        if (startTime == null) return;
+        SessionData sessionData = sessionTimes.remove(uuid);
+        if (sessionData == null) return;
 
         long endTime = System.currentTimeMillis();
-        long elapsedTimeInSeconds = (endTime - startTime) / 1000;
+        long totalElapsedTimeInSeconds = (endTime - sessionData.originalStartTime) / 1000;
+        long timeSinceLastSave = (endTime - sessionData.lastSaveTime) / 1000;
 
         try {
-            updatePlaytime(uuid, elapsedTimeInSeconds);
-            addSessionToDatabase(uuid, elapsedTimeInSeconds);
+            updatePlaytime(uuid, timeSinceLastSave);
+            addSessionToDatabase(uuid, totalElapsedTimeInSeconds);
         } catch (SQLException e) {
             plugin.getLogger().severe("Failed to correctly handle session closure of: " + uuid);
             e.printStackTrace();
@@ -110,13 +117,13 @@ public class PlaytimeManager {
                 int graceTimeInSeconds = plugin.getConfig().getInt("timings.grace-period", 7200);
                 int minimumPlaytimeInSeconds = plugin.getConfig().getInt("timings.minimum-playtime", 90000);
 
-                for (Map.Entry<UUID, Long> entry : sessionStartTimes.entrySet()) {
+                for (Map.Entry<UUID, SessionData> entry : sessionTimes.entrySet()) {
                     UUID uuid = entry.getKey();
-                    Long startTime = entry.getValue();
-                    if (startTime == null) continue;
+                    SessionData sessionData = entry.getValue();
+                    if (sessionData == null) continue;
 
                     long now = System.currentTimeMillis();
-                    long elapsedTimeInSeconds = (now - startTime) / 1000;
+                    long elapsedTimeInSeconds = (now - sessionData.lastSaveTime) / 1000;
 
                     long databasePlaytime;
                     try {
@@ -191,13 +198,13 @@ public class PlaytimeManager {
         return new BukkitRunnable() {
             @Override
             public void run() {
-                for (Map.Entry<UUID, Long> entry : sessionStartTimes.entrySet()) {
+                for (Map.Entry<UUID, SessionData> entry : sessionTimes.entrySet()) {
                     UUID uuid = entry.getKey();
-                    Long startTime = entry.getValue();
-                    if (startTime == null) continue;
+                    SessionData sessionData = entry.getValue();
+                    if (sessionData == null) continue;
 
                     long now = System.currentTimeMillis();
-                    long elapsedTimeInSeconds = (now - startTime) / 1000;
+                    long elapsedTimeInSeconds = (now - sessionData.lastSaveTime) / 1000;
 
                     try {
                         updatePlaytime(uuid, elapsedTimeInSeconds);
@@ -205,9 +212,12 @@ public class PlaytimeManager {
                         plugin.getLogger().severe("Failed to update playtime (" + elapsedTimeInSeconds + ") for: " + uuid);
                         e.printStackTrace();
                     }
+
+                    SessionData newSessionData = new SessionData(sessionData.originalStartTime, now);
+                    entry.setValue(newSessionData);
                 }
             }
-        }.runTaskTimer(plugin, 20L, 6000L); // Runs every 6000 tick (5 minutes)
+        }.runTaskTimerAsynchronously(plugin, 20L, 6000L); // Runs every 6000 tick (5 minutes) asynchronously
     }
 
     /**
