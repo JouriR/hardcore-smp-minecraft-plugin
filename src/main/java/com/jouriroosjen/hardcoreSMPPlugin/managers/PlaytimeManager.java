@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Manages player playtime sessions and persists playtime data to the database.
  *
  * @author Jouri Roosjen
- * @version 1.1.0
+ * @version 1.2.0
  */
 public class PlaytimeManager {
     private final JavaPlugin plugin;
@@ -221,6 +221,44 @@ public class PlaytimeManager {
     }
 
     /**
+     * Give the specified user a death grace period.
+     *
+     * @param playerUuid The player to give the death grace.
+     */
+    public void grantDeathGrace(UUID playerUuid) {
+        try {
+            setUserDeathGrace(playerUuid, true);
+
+            int deathGraceTimeInSeconds = plugin.getConfig().getInt("timings.death-grace-period", 600);
+
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    try {
+                        setUserDeathGrace(playerUuid, false);
+
+                        Player player = plugin.getServer().getPlayer(playerUuid);
+                        if (!player.isConnected()) return;
+
+                        Component messageComponent = Component.text("[SERVER] Je death grace is over!")
+                                .color(NamedTextColor.RED)
+                                .decorate(TextDecoration.BOLD);
+
+                        player.sendMessage(messageComponent);
+                    } catch (SQLException e) {
+                        plugin.getLogger().severe("Failed to remove death grace for: " + playerUuid);
+                        e.printStackTrace();
+                    }
+                }
+            }.runTaskLater(plugin, deathGraceTimeInSeconds * 20L);
+
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to grant death grace: " + playerUuid);
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * Gets the player's playtime stored in the database.
      *
      * @param uuid The player's UUID
@@ -354,6 +392,25 @@ public class PlaytimeManager {
             statement.setString(1, uuid.toString());
             statement.setLong(2, elapsedTimeInSeconds);
             statement.execute();
+        }
+    }
+
+    /**
+     * Sets a player's death grace.
+     *
+     * @param uuid  The unique ID of the player to update.
+     * @param value The value to set.
+     * @throws SQLException If a database error occurs.
+     */
+    private void setUserDeathGrace(UUID uuid, boolean value) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                UPDATE players
+                SET has_death_grace = ?
+                WHERE uuid = ?
+                """)) {
+            statement.setBoolean(1, value);
+            statement.setString(2, uuid.toString());
+            statement.executeUpdate();
         }
     }
 }
