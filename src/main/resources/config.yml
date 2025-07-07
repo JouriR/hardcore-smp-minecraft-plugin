@@ -21,3 +21,4 @@ piggy-bank-amounts:
 timings:
   minimum-playtime: 90000
   grace-period: 7200
+  death-grace-period: 600

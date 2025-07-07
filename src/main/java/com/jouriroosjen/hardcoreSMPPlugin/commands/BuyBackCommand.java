@@ -26,7 +26,7 @@ import java.util.UUID;
  * Command executor for the {@code /buyback} command, allowing dead players to revive themselves.
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.1.0
  */
 public class BuyBackCommand implements CommandExecutor {
     private final JavaPlugin plugin;
@@ -230,15 +230,18 @@ public class BuyBackCommand implements CommandExecutor {
      */
     private int getBuybackPrice(UUID playerUuid) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement("""
-                        SELECT (has_grace)
+                        SELECT has_grace, has_death_grace
                         FROM players
                         WHERE uuid = ?
                 """)) {
             statement.setString(1, playerUuid.toString());
 
             try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next() && resultSet.getBoolean("has_grace")) {
-                    return plugin.getConfig().getInt("piggy-bank-amounts.grace-period-death", 5);
+                if (resultSet.next()) {
+                    if (resultSet.getBoolean("has_death_grace")) return 0;
+
+                    if (resultSet.getBoolean("has_grace"))
+                        return plugin.getConfig().getInt("piggy-bank-amounts.grace-period-death", 5);
                 }
             }
         }

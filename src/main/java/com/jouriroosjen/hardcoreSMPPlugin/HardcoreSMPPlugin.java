@@ -157,7 +157,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(this, databaseManager.connection, hologramManager), this);
 
         // Register commands
-        getCommand("confirm").setExecutor(new ConfirmCommand(this, databaseManager.connection, buybackManager, hologramManager));
+        getCommand("confirm").setExecutor(new ConfirmCommand(this, databaseManager.connection, buybackManager, hologramManager, playtimeManager));
         getCommand("penalize").setExecutor(new PenalizeCommand(this, databaseManager.connection, hologramManager));
         getCommand("place-hologram").setExecutor(new PlaceHologramCommand(hologramManager));
     }

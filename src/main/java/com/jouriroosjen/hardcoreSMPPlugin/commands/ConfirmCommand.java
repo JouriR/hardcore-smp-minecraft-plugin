@@ -3,6 +3,7 @@ package com.jouriroosjen.hardcoreSMPPlugin.commands;
 import com.jouriroosjen.hardcoreSMPPlugin.enums.HologramEnum;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.BuybackManager;
 import com.jouriroosjen.hardcoreSMPPlugin.managers.HologramManager;
+import com.jouriroosjen.hardcoreSMPPlugin.managers.PlaytimeManager;
 import com.jouriroosjen.hardcoreSMPPlugin.utils.PlayerAvatarUtil;
 import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.dependencies.jda.api.EmbedBuilder;
@@ -34,13 +35,14 @@ import java.util.UUID;
  * Handles the /confirm command which allows players to confirm a pending buyback (revival).
  *
  * @author Jouri Roosjen
- * @version 1.0.0
+ * @version 1.1.0
  */
 public class ConfirmCommand implements CommandExecutor {
     private final JavaPlugin plugin;
     private final Connection connection;
     private final BuybackManager buybackManager;
     private final HologramManager hologramManager;
+    private final PlaytimeManager playtimeManager;
 
     /**
      * Represents a buyback assist
@@ -58,12 +60,14 @@ public class ConfirmCommand implements CommandExecutor {
      * @param connection      The SQL database connection
      * @param buybackManager  The BuybackManager that tracks pending buybacks
      * @param hologramManager The HologramManager instance
+     * @param playtimeManager The PlaytimeManager instance.
      */
-    public ConfirmCommand(JavaPlugin plugin, Connection connection, BuybackManager buybackManager, HologramManager hologramManager) {
+    public ConfirmCommand(JavaPlugin plugin, Connection connection, BuybackManager buybackManager, HologramManager hologramManager, PlaytimeManager playtimeManager) {
         this.plugin = plugin;
         this.connection = connection;
         this.buybackManager = buybackManager;
         this.hologramManager = hologramManager;
+        this.playtimeManager = playtimeManager;
     }
 
     /**
@@ -102,6 +106,9 @@ public class ConfirmCommand implements CommandExecutor {
         }
 
         if (buyback.percentage() == null) {
+            // Instant revive if death grace is active
+            if (buybackAmount <= 0) return revivePlayer(buyback.target());
+
             try {
                 // Get latest deathId and corresponding assists
                 OptionalInt correspondingDeathId = getLatestDeath(player.getUniqueId());
@@ -124,6 +131,7 @@ public class ConfirmCommand implements CommandExecutor {
                 return false;
             }
 
+            playtimeManager.grantDeathGrace(buyback.target());
             return revivePlayer(buyback.target());
         }
 
@@ -424,15 +432,18 @@ public class ConfirmCommand implements CommandExecutor {
      */
     private int getBuybackPrice(UUID playerUuid) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement("""
-                        SELECT (has_grace)
+                        SELECT has_grace, has_death_grace
                         FROM players
                         WHERE uuid = ?
                 """)) {
             statement.setString(1, playerUuid.toString());
 
             try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next() && resultSet.getBoolean("has_grace")) {
-                    return plugin.getConfig().getInt("piggy-bank-amounts.grace-period-death", 5);
+                if (resultSet.next()) {
+                    if (resultSet.getBoolean("has_death_grace")) return 0;
+
+                    if (resultSet.getBoolean("has_grace"))
+                        return plugin.getConfig().getInt("piggy-bank-amounts.grace-period-death", 5);
                 }
             }
         }
