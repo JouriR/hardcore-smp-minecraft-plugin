@@ -15,6 +15,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -26,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PlaytimeManager {
     private final JavaPlugin plugin;
     private final Connection connection;
+
     private final BukkitTask playtimeTracker;
     private final BukkitTask playtimeBackupsTask;
 
@@ -82,13 +84,15 @@ public class PlaytimeManager {
         long totalElapsedTimeInSeconds = (endTime - sessionData.originalStartTime) / 1000;
         long timeSinceLastSave = (endTime - sessionData.lastSaveTime) / 1000;
 
-        try {
-            updatePlaytime(uuid, timeSinceLastSave);
-            addSessionToDatabase(uuid, totalElapsedTimeInSeconds);
-        } catch (SQLException e) {
-            plugin.getLogger().severe("Failed to correctly handle session closure of: " + uuid);
-            e.printStackTrace();
-        }
+        CompletableFuture.runAsync(() -> {
+            try {
+                updatePlaytime(uuid, timeSinceLastSave);
+                addSessionToDatabase(uuid, totalElapsedTimeInSeconds);
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Failed to correctly handle session closure of: " + uuid);
+                e.printStackTrace();
+            }
+        });
     }
 
     /**
@@ -125,64 +129,62 @@ public class PlaytimeManager {
                     long now = System.currentTimeMillis();
                     long elapsedTimeInSeconds = (now - sessionData.lastSaveTime) / 1000;
 
-                    long databasePlaytime;
-                    try {
-                        databasePlaytime = getUserPlaytimeFromDatabase(uuid);
-                    } catch (SQLException e) {
-                        plugin.getLogger().severe("Failed to get playtime for: " + uuid);
-                        e.printStackTrace();
+                    CompletableFuture.runAsync(() -> {
+                        try {
+                            long databasePlaytime = getUserPlaytimeFromDatabase(uuid);
+                            long totalPlaytimeInSeconds = databasePlaytime + elapsedTimeInSeconds;
+                            String playerName = plugin.getServer().getPlayer(uuid).getName();
 
-                        continue;
-                    }
+                            // Check player grace status
+                            if (getUserHasGrace(uuid) && totalPlaytimeInSeconds > graceTimeInSeconds) {
+                                disableUserGrace(uuid);
 
-                    long totalPlaytimeInSeconds = databasePlaytime + elapsedTimeInSeconds;
-                    String playerName = plugin.getServer().getPlayer(uuid).getName();
+                                new BukkitRunnable() {
+                                    @Override
+                                    public void run() {
+                                        String graceOverMessage = plugin.getConfig().getString("messages.grace-over", "%player% is no longer protected and pays in full now!")
+                                                .replace("%player%", playerName);
 
-                    // Check user grace status
-                    try {
-                        if (getUserHasGrace(uuid) && totalPlaytimeInSeconds > graceTimeInSeconds) {
-                            disableUserGrace(uuid);
+                                        Component messageComponent = Component.text("[SERVER] ")
+                                                .color(NamedTextColor.GOLD)
+                                                .decorate(TextDecoration.BOLD)
+                                                .append(Component.text(graceOverMessage));
 
-                            String graceOverMessage = plugin.getConfig().getString("messages.grace-over", "%player% is no longer protected and pays in full now!")
-                                    .replace("%player%", playerName);
-
-                            Component messageComponent = Component.text("[SERVER] ")
-                                    .color(NamedTextColor.GOLD)
-                                    .decorate(TextDecoration.BOLD)
-                                    .append(Component.text(graceOverMessage));
-
-                            for (Player player : plugin.getServer().getOnlinePlayers()) {
-                                player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 2, 1);
+                                        for (Player player : plugin.getServer().getOnlinePlayers()) {
+                                            player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 2, 1);
+                                        }
+                                        plugin.getServer().broadcast(messageComponent);
+                                    }
+                                }.runTask(plugin);
                             }
-                            plugin.getServer().broadcast(messageComponent);
-                        }
-                    } catch (SQLException e) {
-                        plugin.getLogger().severe("Failed to check/update grace status for: " + uuid);
-                        e.printStackTrace();
-                    }
 
-                    // Check user minimum playtime status
-                    try {
-                        if (!getUserHasMinimumPlaytime(uuid) && totalPlaytimeInSeconds > minimumPlaytimeInSeconds) {
-                            setUserReachedMinimumPlaytime(uuid);
+                            // Check player minimum playtime
+                            if (!getUserHasMinimumPlaytime(uuid) && totalPlaytimeInSeconds > minimumPlaytimeInSeconds) {
+                                setUserReachedMinimumPlaytime(uuid);
 
-                            String graceOverMessage = plugin.getConfig().getString("messages.minimum-playtime-reached", "%player% has reached the minimum playtime!")
-                                    .replace("%player%", playerName);
+                                new BukkitRunnable() {
+                                    @Override
+                                    public void run() {
+                                        String graceOverMessage = plugin.getConfig().getString("messages.minimum-playtime-reached", "%player% has reached the minimum playtime!")
+                                                .replace("%player%", playerName);
 
-                            Component messageComponent = Component.text("[SERVER] ")
-                                    .color(NamedTextColor.GREEN)
-                                    .decorate(TextDecoration.BOLD)
-                                    .append(Component.text(graceOverMessage));
+                                        Component messageComponent = Component.text("[SERVER] ")
+                                                .color(NamedTextColor.GREEN)
+                                                .decorate(TextDecoration.BOLD)
+                                                .append(Component.text(graceOverMessage));
 
-                            for (Player player : plugin.getServer().getOnlinePlayers()) {
-                                player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 2, 1);
+                                        for (Player player : plugin.getServer().getOnlinePlayers()) {
+                                            player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 2, 1);
+                                        }
+                                        plugin.getServer().broadcast(messageComponent);
+                                    }
+                                }.runTask(plugin);
                             }
-                            plugin.getServer().broadcast(messageComponent);
+                        } catch (SQLException e) {
+                            plugin.getLogger().severe("Failed to get playtime for: " + uuid);
+                            e.printStackTrace();
                         }
-                    } catch (SQLException e) {
-                        plugin.getLogger().severe("Failed to check/change minimum playtime status for: " + uuid);
-                        e.printStackTrace();
-                    }
+                    });
                 }
             }
         }.runTaskTimer(plugin, 20L, 1200L); // Runs every 1200 tick (1 minute)
