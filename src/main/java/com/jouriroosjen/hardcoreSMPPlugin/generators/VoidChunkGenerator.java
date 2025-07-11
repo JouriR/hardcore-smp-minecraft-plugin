@@ -2,7 +2,6 @@ package com.jouriroosjen.hardcoreSMPPlugin.generators;
 
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.block.Biome;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.WorldInfo;
 import org.jetbrains.annotations.NotNull;
@@ -16,24 +15,6 @@ import java.util.Random;
  * @version 1.0.0
  */
 public class VoidChunkGenerator extends ChunkGenerator {
-    private final Biome forcedBiome;
-
-    /**
-     * Constructs a new {@code VoidChunkGenerator} instance with a forced biome.
-     *
-     * @param forcedBiome The biome to force the world in.
-     */
-    public VoidChunkGenerator(Biome forcedBiome) {
-        this.forcedBiome = forcedBiome;
-    }
-
-    /**
-     * Constructs a new {@code VoidChunkGenerator} instance.
-     */
-    public VoidChunkGenerator() {
-        this(null);
-    }
-
     @Override
     public Location getFixedSpawnLocation(@NotNull World world, @NotNull Random random) {
         return new Location(world, 0, 100, 0);
