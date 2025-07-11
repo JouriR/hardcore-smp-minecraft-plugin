@@ -4,10 +4,7 @@ import com.jouriroosjen.hardcoreSMPPlugin.commands.*;
 import com.jouriroosjen.hardcoreSMPPlugin.database.DatabaseManager;
 import com.jouriroosjen.hardcoreSMPPlugin.database.MigrationsManager;
 import com.jouriroosjen.hardcoreSMPPlugin.listeners.*;
-import com.jouriroosjen.hardcoreSMPPlugin.managers.BuybackManager;
-import com.jouriroosjen.hardcoreSMPPlugin.managers.HologramManager;
-import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
-import com.jouriroosjen.hardcoreSMPPlugin.managers.PlaytimeManager;
+import com.jouriroosjen.hardcoreSMPPlugin.managers.*;
 import eu.decentsoftware.holograms.api.DecentHologramsAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
@@ -68,6 +65,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         buybackManager = new BuybackManager(this);
         playerStatisticsManager = new PlayerStatisticsManager(this, databaseManager.connection);
         playtimeManager = new PlaytimeManager(this, databaseManager.connection);
+        WorldManager worldManager = new WorldManager(this);
 
         // Register event listeners
         playerJumpListener = new PlayerJumpListener(this, playerStatisticsManager);
@@ -122,6 +120,9 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
                 }
             }, this);
         }
+
+        // Create special worlds
+        worldManager.createWorld("world_event_rps");
     }
 
     /**

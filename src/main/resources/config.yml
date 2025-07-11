@@ -22,3 +22,22 @@ timings:
   minimum-playtime: 90000
   grace-period: 7200
   death-grace-period: 600
+worlds:
+  # world_name:
+  #   type: NORMAL / FLAT / LARGE_BIOMES / AMPLIFIED
+  #   environment: NORMAL / NETHER / THE_END
+  #   difficulty: PEACEFUL / EASY / NORMAL / HARD
+  #   generate-structures: true / false
+  #   daylight-cycle: true / false
+  #   weather-cycle: true / false
+  #   mob-spawning: true / false
+  #   keep-inventory: true / false
+  world_event_rps:
+    type: "NORMAL"
+    environment: "NETHER"
+    difficulty: "HARD"
+    generate-structures: false
+    daylight-cycle: false
+    weather-cycle: false
+    mob-spawning: false
+    keep-inventory: true
