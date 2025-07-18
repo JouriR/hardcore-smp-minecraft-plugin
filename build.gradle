@@ -26,6 +26,9 @@ repositories {
     maven {
         url = uri("https://repo.opencollab.dev/main/")
     }
+    maven {
+        url = uri("https://repo.bluecolored.de/releases")
+    }
 }
 
 dependencies {
@@ -33,7 +36,8 @@ dependencies {
             "io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT",
             "com.github.decentsoftware-eu:decentholograms:2.8.17",
             "com.discordsrv:discordsrv:1.29.0",
-            "org.geysermc.floodgate:api:2.2.4-SNAPSHOT"
+            "org.geysermc.floodgate:api:2.2.4-SNAPSHOT",
+            "de.bluecolored:bluemap-api:2.7.4"
     )
 }
 

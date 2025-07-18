@@ -17,6 +17,9 @@ dependencies:
     floodgate:
       load: BEFORE
       required: true
+    bluemap:
+      load: BEFORE
+      required: true
 commands:
   buyback:
     description: "Buy yourself or another player back!"
