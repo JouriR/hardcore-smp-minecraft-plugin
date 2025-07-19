@@ -4,10 +4,8 @@ import com.jouriroosjen.hardcoreSMPPlugin.commands.*;
 import com.jouriroosjen.hardcoreSMPPlugin.database.DatabaseManager;
 import com.jouriroosjen.hardcoreSMPPlugin.database.MigrationsManager;
 import com.jouriroosjen.hardcoreSMPPlugin.listeners.*;
-import com.jouriroosjen.hardcoreSMPPlugin.managers.BuybackManager;
-import com.jouriroosjen.hardcoreSMPPlugin.managers.HologramManager;
-import com.jouriroosjen.hardcoreSMPPlugin.managers.PlayerStatisticsManager;
-import com.jouriroosjen.hardcoreSMPPlugin.managers.PlaytimeManager;
+import com.jouriroosjen.hardcoreSMPPlugin.managers.*;
+import de.bluecolored.bluemap.api.BlueMapAPI;
 import eu.decentsoftware.holograms.api.DecentHologramsAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
@@ -34,6 +32,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
     private HologramManager hologramManager;
     private PlayerStatisticsManager playerStatisticsManager;
     private PlaytimeManager playtimeManager;
+    private MarkerManager markerManager;
 
     private PlayerJumpListener playerJumpListener;
 
@@ -108,6 +107,13 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         getCommand("buyback").setExecutor(new BuyBackCommand(this, databaseManager.connection, buybackManager));
         getCommand("my-debt").setExecutor(new MyDebtCommand(this, databaseManager.connection));
 
+        // Delay BlueMap features until API is loaded
+        BlueMapAPI.onEnable(api -> {
+            markerManager = new MarkerManager(this, api);
+
+            getCommand("poi").setExecutor(new PoiCommand(markerManager));
+        });
+
         // Delay hologram features registration until DecentHolograms is loaded
         if (Bukkit.getPluginManager().isPluginEnabled("DecentHolograms")) {
             initHologramFeatures();
@@ -132,6 +138,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         // Clear managers
         buybackManager.clear();
         hologramManager.destroy();
+        markerManager.saveAllMarkerSets();
         playerJumpListener.flushAllPendingJumps();
         playtimeManager.stopAllSessions();
         playtimeManager.stopPlaytimeTracker();

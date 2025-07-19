@@ -17,6 +17,9 @@ dependencies:
     floodgate:
       load: BEFORE
       required: true
+    bluemap:
+      load: BEFORE
+      required: true
 commands:
   buyback:
     description: "Buy yourself or another player back!"
@@ -33,3 +36,6 @@ commands:
   place-hologram:
     description: "Places the specified hologram on your location."
     usage: "/place-hologram <PIGGY_BANK | LATEST_PENALTY | LATEST_DEATH | LATEST_ASSIST>"
+  poi:
+    description: "Creates a point of interest."
+    usage: "/poi <name>"
