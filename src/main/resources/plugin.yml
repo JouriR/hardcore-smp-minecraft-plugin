@@ -36,3 +36,6 @@ commands:
   place-hologram:
     description: "Places the specified hologram on your location."
     usage: "/place-hologram <PIGGY_BANK | LATEST_PENALTY | LATEST_DEATH | LATEST_ASSIST>"
+  poi:
+    description: "Creates a point of interest."
+    usage: "/poi <name>"
