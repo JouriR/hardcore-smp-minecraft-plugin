@@ -1,5 +1,6 @@
 package com.jouriroosjen.hardcoreSMPPlugin.commands;
 
+import com.jouriroosjen.hardcoreSMPPlugin.utils.DateTimeUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.Command;
@@ -12,11 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletableFuture;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class StartCountdownCommand implements CommandExecutor {
     private final Connection connection;
@@ -49,58 +46,18 @@ public class StartCountdownCommand implements CommandExecutor {
         if (args.length == 0 || args.length > 4) return false;
 
         try {
-            Duration duration = parseDuration(String.join(" ", args));
+            Duration duration = DateTimeUtil.parseDuration(String.join(" ", args));
             Instant endTime = Instant.now().plus(duration);
 
             String endTimeString = endTime.toString();
             createCountdown(endTimeString);
 
-            sender.sendMessage("Countdown started! Ends at: " + formatForDisplay(endTime));
+            sender.sendMessage("Countdown started! Ends at: " + DateTimeUtil.formatForDisplay(endTime));
         } catch (IllegalArgumentException e) {
             sender.sendMessage("Invalid duration format! Use: 1h 30m, 2d, etc.");
         }
 
         return true;
-    }
-
-    /**
-     * Parse the remaining time input.
-     *
-     * @param input The user input.
-     * @return The duration of the timer.
-     */
-    private Duration parseDuration(String input) {
-        Duration total = Duration.ZERO;
-        Pattern pattern = Pattern.compile("(\\d+)([dhms])");
-        Matcher matcher = pattern.matcher(input.toLowerCase());
-
-        while (matcher.find()) {
-            int amount = Integer.parseInt(matcher.group(1));
-            String unit = matcher.group(2);
-
-            switch (unit) {
-                case "d" -> total = total.plusDays(amount);
-                case "h" -> total = total.plusHours(amount);
-                case "m" -> total = total.plusMinutes(amount);
-                case "s" -> total = total.plusSeconds(amount);
-            }
-        }
-
-        if (total.isZero())
-            throw new IllegalArgumentException("No valid duration found");
-
-        return total;
-    }
-
-    /**
-     * Format the end time to a human-readable string.
-     *
-     * @param instant The instant at which the countdown will end.
-     * @return A human-readable string of the end time.
-     */
-    private String formatForDisplay(Instant instant) {
-        return instant.atZone(ZoneId.systemDefault())
-                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 
     /**
