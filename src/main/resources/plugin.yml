@@ -33,3 +33,6 @@ commands:
   place-hologram:
     description: "Places the specified hologram on your location."
     usage: "/place-hologram <PIGGY_BANK | LATEST_PENALTY | LATEST_DEATH | LATEST_ASSIST>"
+  start-countdown:
+    description: "Start a countdown for the given event."
+    usage: "/start-countdown <d | h | m | s>"
