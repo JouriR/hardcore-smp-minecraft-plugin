@@ -105,7 +105,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         // Register commands
         getCommand("buyback").setExecutor(new BuyBackCommand(this, databaseManager.connection, buybackManager));
         getCommand("my-debt").setExecutor(new MyDebtCommand(this, databaseManager.connection));
-        getCommand("start-countdown").setExecutor(new StartCountdownCommand());
+        getCommand("start-countdown").setExecutor(new StartCountdownCommand(databaseManager.connection));
 
         // Delay hologram features registration until DecentHolograms is loaded
         if (Bukkit.getPluginManager().isPluginEnabled("DecentHolograms")) {
