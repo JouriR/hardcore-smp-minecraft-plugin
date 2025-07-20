@@ -1,5 +1,6 @@
 package com.jouriroosjen.hardcoreSMPPlugin.commands;
 
+import com.jouriroosjen.hardcoreSMPPlugin.managers.CountdownManager;
 import com.jouriroosjen.hardcoreSMPPlugin.utils.DateTimeUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -8,23 +9,19 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
 
 public class StartCountdownCommand implements CommandExecutor {
-    private final Connection connection;
+    private final CountdownManager countdownManager;
 
     /**
      * Construct a new {@code StartCountdownCommand} instance.
      *
-     * @param connection The database connection instance.
+     * @param countdownManager The active {@code CountdownManager} instance.
      */
-    public StartCountdownCommand(Connection connection) {
-        this.connection = connection;
+    public StartCountdownCommand(CountdownManager countdownManager) {
+        this.countdownManager = countdownManager;
     }
 
     /**
@@ -50,7 +47,7 @@ public class StartCountdownCommand implements CommandExecutor {
             Instant endTime = Instant.now().plus(duration);
 
             String endTimeString = endTime.toString();
-            createCountdown(endTimeString);
+            countdownManager.createCountdown(endTimeString);
 
             sender.sendMessage("Countdown started! Ends at: " + DateTimeUtil.formatForDisplay(endTime));
         } catch (IllegalArgumentException e) {
@@ -58,24 +55,5 @@ public class StartCountdownCommand implements CommandExecutor {
         }
 
         return true;
-    }
-
-    /**
-     * Create a countdown in the database.
-     *
-     * @param endTime The date and time the countdown should end.
-     */
-    private void createCountdown(String endTime) {
-        CompletableFuture.runAsync(() -> {
-            try (PreparedStatement statement = connection.prepareStatement("""
-                    INSERT INTO countdowns (end_at, created_at, updated_at)
-                    VALUES (?, datetime('now'), datetime('now'))
-                    """)) {
-                statement.setString(1, endTime);
-                statement.execute();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        });
     }
 }

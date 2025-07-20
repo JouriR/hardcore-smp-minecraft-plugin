@@ -66,6 +66,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         playerStatisticsManager = new PlayerStatisticsManager(this, databaseManager.connection);
         playtimeManager = new PlaytimeManager(this, databaseManager.connection);
         WorldManager worldManager = new WorldManager(this);
+        CountdownManager countdownManager = new CountdownManager(databaseManager.connection);
 
         // Register event listeners
         playerJumpListener = new PlayerJumpListener(this, playerStatisticsManager);
@@ -105,7 +106,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         // Register commands
         getCommand("buyback").setExecutor(new BuyBackCommand(this, databaseManager.connection, buybackManager));
         getCommand("my-debt").setExecutor(new MyDebtCommand(this, databaseManager.connection));
-        getCommand("start-countdown").setExecutor(new StartCountdownCommand(databaseManager.connection));
+        getCommand("start-countdown").setExecutor(new StartCountdownCommand(countdownManager));
 
         // Delay hologram features registration until DecentHolograms is loaded
         if (Bukkit.getPluginManager().isPluginEnabled("DecentHolograms")) {
