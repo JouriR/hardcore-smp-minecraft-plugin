@@ -31,6 +31,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
     private HologramManager hologramManager;
     private PlayerStatisticsManager playerStatisticsManager;
     private PlaytimeManager playtimeManager;
+    private CountdownManager countdownManager;
 
     private PlayerJumpListener playerJumpListener;
 
@@ -65,8 +66,8 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         buybackManager = new BuybackManager(this);
         playerStatisticsManager = new PlayerStatisticsManager(this, databaseManager.connection);
         playtimeManager = new PlaytimeManager(this, databaseManager.connection);
+        countdownManager = new CountdownManager(this, databaseManager.connection);
         WorldManager worldManager = new WorldManager(this);
-        CountdownManager countdownManager = new CountdownManager(databaseManager.connection);
 
         // Register event listeners
         playerJumpListener = new PlayerJumpListener(this, playerStatisticsManager);
@@ -139,6 +140,7 @@ public final class HardcoreSMPPlugin extends JavaPlugin {
         playtimeManager.stopAllSessions();
         playtimeManager.stopPlaytimeTracker();
         playtimeManager.stopPlaytimeBackupsTask();
+        countdownManager.shutdown();
         playerStatisticsManager.shutdown();
 
         // Close database connection
