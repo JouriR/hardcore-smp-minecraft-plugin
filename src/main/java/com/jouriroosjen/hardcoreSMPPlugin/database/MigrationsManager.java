@@ -111,7 +111,9 @@ public class MigrationsManager {
                     "migrations/V8__insert_statistic_types.sql",
                     "migrations/V9__create_player_statistics_table.sql",
                     "migrations/V10__add_has_death_grace_to_players_table.sql",
-                    "migrations/V11__create_countdowns_table.sql"
+                    "migrations/V11__create_event_types_table.sql",
+                    "migrations/V12__create_events_table.sql",
+                    "migrations/V13__create_countdowns_table.sql"
             );
 
             Pattern pattern = Pattern.compile("V(\\d+)__.*\\.sql");
