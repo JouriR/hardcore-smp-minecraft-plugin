@@ -26,7 +26,7 @@ public class CountdownManager {
     private BukkitTask trackingTask;
 
     private final Map<Integer, CountdownData> activeCountdowns = new ConcurrentHashMap<>();
-    
+
     /**
      * Represents a countdown.
      *
@@ -42,15 +42,6 @@ public class CountdownManager {
          */
         public boolean isFinished() {
             return Instant.now().isAfter(endTime);
-        }
-
-        /**
-         * Calculates how many seconds are left before the countdown ends.
-         *
-         * @return The amount of seconds remaining in the countdown.
-         */
-        public long getSecondsRemaining() {
-            return Math.max(0, endTime.getEpochSecond() - Instant.now().getEpochSecond());
         }
     }
 

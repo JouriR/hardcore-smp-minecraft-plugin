@@ -2,8 +2,10 @@ package com.jouriroosjen.hardcoreSMPPlugin.enums;
 
 public enum EventStatusEnum {
     NOT_STARTED(1),
-    IN_PROGRESS(2),
-    FINISHED(3);
+    STARTING(2),
+    IN_PROGRESS(3),
+    ENDING(4),
+    FINISHED(5);
 
     private final int id;
 
