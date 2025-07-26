@@ -200,6 +200,15 @@ public abstract class BaseEvent {
     }
 
     /**
+     * Gets the event duration.
+     *
+     * @return The event duration.
+     */
+    public long getDuration() {
+        return duration;
+    }
+
+    /**
      * Get the remaining event time.
      *
      * @return The remaining time in milliseconds.
